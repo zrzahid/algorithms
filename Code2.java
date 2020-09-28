@@ -1964,6 +1964,62 @@ public class Test {
         a[i] ^= a[j];
     }
     
+    public String getPermutation(int n, int k) {
+        int[] kthperm = kthPermutation(n, k);
+        StringBuilder sb = new StringBuilder(kthperm.length);
+        Arrays.stream(kthperm).forEach(i -> {
+            sb.append(i);
+        });
+        
+        return sb.toString();
+    }
+    
+    public int[] kthPermutation(int n, int k){
+        final int[] nums = new int[n];
+        final int[] factorial = new int[n+1];
+
+        factorial[0] = 1;
+        factorial[1] = 1;
+        nums[0] = 1;
+
+        for (int i = 2; i <= n; i++) {
+            nums[i-1] = i;
+            factorial[i] = i*factorial[i - 1];
+        }
+
+        if(k <= 1){
+            return nums;
+        }
+        if(k >= factorial[n]){
+            reverse(nums, 0, n-1);
+            return nums;
+        }
+
+        k -= 1;//0-based 
+        for(int i = 0; i < n-1; i++){
+            int fact = factorial[n-i-1];
+            //index of the element in the rest of the input set
+            //to put at i position (note, index is offset by i)
+            int index = (k/fact);
+            //put the element at index (offset by i) element at position i 
+            //and shift the rest on the right of i
+            shiftRight(nums, i, i+index);
+            //decrement k by fact*index as we can have fact number of 
+            //permutations for each element at position less than index
+            k = k - fact*index;
+        }
+
+        return nums;
+    }
+    
+    private void shiftRight(int[] a, int s, int e){
+        int temp = a[e];
+        for(int i = e; i > s; i--){
+            a[i] = a[i-1];
+        }
+        a[s] = temp;
+    }
+    
     public List<List<Integer>> permute(int[] nums) {
         List<List<Integer>> res = new ArrayList<>();
         Set<Integer> visited = new HashSet<>();
@@ -2013,6 +2069,77 @@ public class Test {
                 visited.remove(i);
             }
         }
+    }
+    
+    public List<List<Integer>> combine(int n, int k) {
+        List<List<Integer>> result = new ArrayList<>();
+        combination(n, k, new LinkedList<Integer>(), 0, result);
+        return result;
+    }
+    
+    public void combination(int n, int k, LinkedList<Integer> cur, int start, List<List<Integer>> result){
+        if(cur.size() == k){
+            result.add(new ArrayList<>(cur));
+        }
+        else{
+            for(int i = start; i<n; i++){
+                cur.add(i+1);
+                combination(n, k, cur, i+1, result);
+                cur.removeLast();
+            }
+        }
+    }
+    
+    public List<List<Integer>> combinationSum(int[] candidates, int target) {
+        List<List<Integer>> result = new ArrayList<>();
+        Arrays.sort(candidates);
+        combinationSumHelper(candidates, target, 0, new LinkedList<>(), 0, result);
+        return result;
+    }
+    
+    public void combinationSumHelper(int[] nums, int targetSum, int curSum, LinkedList<Integer> cur, int start, List<List<Integer>> result){
+        if(curSum == targetSum){
+            result.add(new ArrayList<>(cur));
+        }   
+        else if(curSum > targetSum){
+            return;
+        }
+        else{
+            for(int i = start; i < nums.length; i++){
+                cur.add(nums[i]);
+                combinationSumHelper(nums, targetSum, curSum+nums[i], cur, i, result);
+                cur.removeLast();
+            }
+        }
+    }
+    
+    public ListNode removeNthFromEnd(ListNode head, int n) {
+        if(head == null){
+            return null;
+        }
+        
+        ListNode tail = head;
+        while(tail != null && --n > 0){
+            tail = tail.next;
+        }
+        
+        ListNode tempHead = head;
+        ListNode prev = null;
+        while(tail != null && tail.next != null){
+            tail = tail.next;
+            prev = tempHead;
+            tempHead = tempHead.next;
+        }
+        
+        if(tempHead != null){
+            if(prev != null)
+                prev.next = tempHead.next;
+            else{
+                head = tempHead.next;
+            }
+        }
+        
+        return head;
     }
     
     public static void main(String[] args) {
