@@ -13,6 +13,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
@@ -2090,6 +2091,7 @@ public class Test {
         }
     }
     
+    // can reuse the numbers
     public List<List<Integer>> combinationSum(int[] candidates, int target) {
         List<List<Integer>> result = new ArrayList<>();
         Arrays.sort(candidates);
@@ -2100,14 +2102,91 @@ public class Test {
     public void combinationSumHelper(int[] nums, int targetSum, int curSum, LinkedList<Integer> cur, int start, List<List<Integer>> result){
         if(curSum == targetSum){
             result.add(new ArrayList<>(cur));
-        }   
+        } 
+        // prune unreachable paths
         else if(curSum > targetSum){
             return;
         }
         else{
             for(int i = start; i < nums.length; i++){
                 cur.add(nums[i]);
-                combinationSumHelper(nums, targetSum, curSum+nums[i], cur, i, result);
+                combinationSumHelper(nums, targetSum, curSum+nums[i], cur, i, result); // i to reuse the same numbers
+                cur.removeLast();
+            }
+        }
+    }
+    
+    // use each number once only and no duplicate in the answer
+    public List<List<Integer>> combinationSum2(int[] candidates, int target) {
+        List<List<Integer>> result = new ArrayList<>();
+        Arrays.sort(candidates);
+        combinationSumHelper2(candidates, target, 0, new LinkedList<>(), 0, result);
+        return result;
+    }
+    
+    public void combinationSumHelper2(int[] nums, int targetSum, int curSum, LinkedList<Integer> cur, int start, List<List<Integer>> result){
+        if(curSum == targetSum){
+            result.add(new ArrayList<>(cur));
+        }   
+        // prune unreachable paths
+        else if(curSum > targetSum){
+            return;
+        }
+        else{
+            for(int i = start; i < nums.length; i++){
+                // skip duplicates
+                if(i == start || (i > start && nums[i] != nums[i-1])){
+                    cur.add(nums[i]);
+                    combinationSumHelper2(nums, targetSum, curSum+nums[i], cur, i+1, result);// i+1 to use one number just once.
+                    cur.removeLast();
+                }
+            }
+        }
+    }
+    
+    // all valid combinations of k numbers that sum up to n such that the following conditions are true:
+    // Only numbers 1 through 9 are used.
+    // Each number is used at most once.
+    public List<List<Integer>> combinationSum3(int k, int n) {
+        List<List<Integer>> result = new ArrayList<>();
+        combinationSumHelper3(new int[]{1,2,3,4,5,6,7,8,9}, k, n, 0, new LinkedList<>(), 0, result);
+        return result;
+    }
+    
+    public void combinationSumHelper3(int[] nums, int k, int targetSum, int curSum, LinkedList<Integer> cur, int start, List<List<Integer>> result){
+        if(cur.size() == k && curSum == targetSum){
+            result.add(new ArrayList<>(cur));
+        }  
+        // prune unreachable paths
+        else if(curSum > targetSum){
+            return;
+        }
+        else {
+            for(int i = start; i < nums.length; i++){
+                // skip duplicates
+                if(i == start || (i > start && nums[i] != nums[i-1])){
+                    cur.add(nums[i]);
+                    combinationSumHelper3(nums, k, targetSum, curSum+nums[i], cur, i+1, result);// i+1 to use one number just once.
+                    cur.removeLast();
+                }
+            }
+        }
+    }
+    
+    public List<List<Integer>> subsets(int[] nums) {
+        List<List<Integer>> result = new ArrayList<>();
+        subsetHelper(nums, new LinkedList<Integer>(), 0, result);
+        return result;
+    }
+    
+    public void subsetHelper(int[] nums, LinkedList<Integer> cur, int start, List<List<Integer>> result){
+        result.add(new ArrayList<>(cur));
+        
+        for(int i = start; i < nums.length; i++){
+            //skip dups
+            if(i == start || (i > start && nums[i] != nums[i-1])){
+                cur.add(nums[i]);
+                subsetHelper(nums, cur, i+1, result);// i+1 to take one element just once in the current recursion path
                 cur.removeLast();
             }
         }
@@ -2142,6 +2221,199 @@ public class Test {
         return head;
     }
     
+    class BSTIterator {
+        Stack<TreeNode> stack = new Stack<>();
+        public BSTIterator(TreeNode root) {
+            while(root != null){
+                stack.push(root);
+                root = root.left;
+            }
+        }
+        
+        /** @return the next smallest number */
+        public int next() {
+            if(!hasNext()){
+                return Integer.MIN_VALUE;
+            }
+            
+            TreeNode root = stack.pop();
+            TreeNode it = root;
+            
+            if(it.right != null){
+                it = it.right;
+                
+                while(it != null){
+                    stack.push(it);
+                    it = it.left;
+                }
+            }
+            
+            return root.val;
+        }
+        
+        /** @return whether we have a next smallest number */
+        public boolean hasNext() {
+            return !stack.isEmpty();
+        }
+    }
+    
+    class NestedInteger{
+        Integer e;
+        List<NestedInteger> list;
+        public boolean isInteger() {
+            return this.e != null;
+        }
+        public Integer getInteger() {
+            return this.e;
+        }
+        public List<NestedInteger> getList(){
+            return this.list;
+        }
+    }
+    
+    public class NestedIterator implements Iterator<Integer> {
+        Stack<NestedInteger> stack;
+        public NestedIterator(List<NestedInteger> nestedList) {
+            stack = new Stack<>();
+            pushToStackInReverseOrder(nestedList);
+        }
+
+        @Override
+        public Integer next() {
+            if(!hasNext())
+                return null;
+            
+            return stack.pop().getInteger();
+        }
+
+        @Override
+        public boolean hasNext() {
+            while(!stack.isEmpty() && !stack.peek().isInteger()){
+                NestedInteger ni = stack.pop();
+                pushToStackInReverseOrder(ni.getList());
+            }
+            
+            return !stack.isEmpty();
+        }
+        
+        private void pushToStackInReverseOrder(List<NestedInteger> nestedList){
+            ListIterator<NestedInteger> it = nestedList.listIterator(nestedList.size());
+            while(it.hasPrevious()){
+                stack.push(it.previous());
+            }
+        }
+    }
+    
+    public ListNode swapPairs(ListNode head) {
+        return reverseKGroup(head, 2);
+    }
+    
+    public ListNode reverseKGroup(ListNode head, int k) {
+        if(head == null || head.next == null){
+            return head;
+        }
+        
+        ListNode prevHead = head;
+        ListNode reversed = null;
+        ListNode temp = null;
+        int count = 0;
+        
+        // handle right most part of list of size less than k
+        temp = head;
+        while(temp != null && count < k){
+            count++;
+            temp = temp.next;
+        }
+        if(count < k){
+            return head;
+        }
+        
+        temp = null;
+        count = 0;
+        while(head != null && count < k){
+            temp = head.next;
+            head.next = reversed;
+            reversed = head;
+            head = temp;
+            count++;
+        }
+
+        if(prevHead != null){
+            prevHead.next = reverseKGroup(head, k);
+        }
+
+        return reversed;
+    }
+    
+    public ListNode mergeSortedLists(ListNode a, ListNode b){
+        if(a == null){
+            return b;
+        }
+        if(b == null){
+            return a;
+        }
+        
+        ListNode merged = null;
+        
+        if(a.val > b.val){
+            merged = b;
+            merged.next = mergeSortedLists(a, b.next);
+        }
+        else{
+            merged = a;
+            merged.next = mergeSortedLists(a.next, b);
+        }
+        
+        return merged;
+    }
+
+    public ListNode MergeSortList(ListNode head){
+        if (head == null || head.next == null)
+            return head;
+    
+        // cut the list in middle
+        ListNode prev = null, slow = head, fast = head;
+        
+        while (fast != null && fast.next != null) {
+          prev = slow;
+          slow = slow.next;
+          fast = fast.next.next;
+        }
+        
+        prev.next = null;
+        
+        ListNode left = MergeSortList(head);
+        ListNode right =  MergeSortList(slow);
+        
+        return mergeSortedLists(left, right);
+    }
+    
+    public ListNode splitLinkedListNode(ListNode head, int n){
+        ListNode slow = head;
+        ListNode fast = head;
+        ListNode prev = head;
+        
+        while(fast != null && slow != null){
+            int count = 0;
+            prev = slow;
+            slow=slow.next;
+            while(count < n && fast != null){
+                fast = fast.next;
+                count++;
+            }
+            
+            if(slow == fast){
+                return null;
+            }
+        }
+        
+        if(prev != null){
+            prev.next = null;
+        }
+        
+        return slow;
+    }
+    
     public static void main(String[] args) {
         
         Test t = new Test();
@@ -2162,21 +2434,23 @@ public class Test {
         int ceil = t.ceil(new int[] {-1,0,3,3,5,6,8}, 4);
         
         ListNode dummy = null;
-        ListNode head = t.new ListNode(1);
+        ListNode head = t.new ListNode(4);
         dummy = head;
         head.next = t.new ListNode(2);
         head = head.next;
+        head.next = t.new ListNode(1);
+        head = head.next;
         head.next = t.new ListNode(3);
-        head = head.next;
-        head.next = t.new ListNode(4);
-        head = head.next;
-        head.next = t.new ListNode(5);
-        head = head.next;
-        head.next = t.new ListNode(6);
-        head = head.next;
-        head.next = t.new ListNode(7);
-        head = head.next;
-        head.next = t.new ListNode(8);
+//        head = head.next;
+//        head.next = t.new ListNode(5);
+//        head = head.next;
+//        head.next = t.new ListNode(7);
+//        head = head.next;
+//        head.next = t.new ListNode(6);
+//        head = head.next;
+//        head.next = t.new ListNode(8);
+        
+        ListNode sorted = t.MergeSortList(dummy);
         
         //ListNode head2 = t.new DLLListToBSTInplace(dummy).convert();
         
