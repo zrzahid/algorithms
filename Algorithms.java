@@ -2557,9 +2557,269 @@ public class Test {
         }
     }
     
+    public int longestValidParentheses(String s) {
+        if(s == null || s.length() == 0){
+            return 0;
+        }
+        // Motivation: a string becomes invalid for the first unmatched ‘)’ or the last unmatched ‘(‘.
+        // for first unmatched ')' we can do forward pass
+        // for last unmatched '(' we can do backward pass
+        int curLen = 0;
+        int maxLen = 0;
+        int count  = 0;
+        // forward pass
+        for(int i = 0; i < s.length(); i++){
+            // count as log as we encounter '(' till we see a ')'
+            if(s.charAt(i) == '('){
+                count++; // equivalent to stack push
+            }
+            // if we encounter a ')' then we decrease counter 
+            else{
+                // we decrease counter (aka pop from stack) only if a matching '(' was seen before. Otherwise we found an invalid ')' . So reset the substring 
+                if(count <= 0){
+                    curLen = 0;
+                }
+                // decrease (pop)
+                else{
+                    count--;
+                    curLen += 2;
+                    
+                    // if matching '(' was found and no more opening bracket (count = 0)                     //in the stack then update max
+                    if(count == 0){
+                        maxLen = Math.max(maxLen, curLen);
+                    }
+                }
+            }
+        }
+        
+        // backward pass
+        curLen = 0;
+        count = 0;
+        for(int i = s.length() - 1; i >= 0; i--){
+            // count as log as we encounter ')' till we see a '('
+            if(s.charAt(i) == ')'){
+                count++; // equivalent to stack push
+            }
+            // if we encounter a '(' then we decrease counter 
+            else{
+                // we decrease counter (aka pop from stack) only if a matching ')' was seen before. Otherwise we found an invalid '(' . So reset the substring 
+                if(count <= 0){
+                    curLen = 0;
+                }
+                // decrease (pop)
+                else{
+                    count--;
+                    curLen += 2;
+                    
+                    // if matching '(' was found and no more opening bracket (count = 0)                     //in the stack then update max
+                    if(count == 0){
+                        maxLen = Math.max(maxLen, curLen);
+                    }
+                }
+            }
+        }
+        
+        return maxLen;
+    }
+    
+    public int divide(int dividend, int divisor) {
+        if (dividend == 0){
+            return 0;
+        }
+        if(dividend == Integer.MIN_VALUE && divisor == -1){
+            return Integer.MAX_VALUE;
+        }
+        if(divisor == 1 || divisor == -1){
+            return dividend*divisor;
+        }
+        
+        int sign = (((dividend > 0 && divisor > 0) || (dividend < 0 && divisor < 0)) ? 1 : -1);
+        long dividendLong = Math.abs((long)dividend);
+        long divisorLong = Math.abs((long)divisor);
+        int res = 0;
+        
+        while(dividendLong >= divisorLong){
+            dividendLong -= divisorLong;
+            res++;
+        }
+        
+        if(sign == -1){
+            return -res;
+        }
+        else{
+            return res;
+        }
+    }
+    
+    public int findMaxRepeatedSubStrLength(int[] A, int[] B) {
+        if(A == null || B == null){
+            return 0;
+        }
+        
+        int[][] dp = new int[A.length+1][B.length+1];
+        int max = 0;
+        
+        for(int i = 1; i <= A.length; i++){
+            for(int j = 1; j <= B.length; j++){
+                if(A[i-1] == B[j-1]){
+                    dp[i][j] = 1 + dp[i-1][j-1];
+                    max = Math.max(max, dp[i][j]);
+                }
+            }
+        }
+        
+        return max;
+    }
+    
+    public int uniquePaths(int m, int n) {
+        if(m == 1 || n == 1){
+            return 1;
+        }
+        int[] dp = new int[n];
+        
+        dp[0] = 1;
+        for(int i = 0; i < m; i++){
+            for(int j = 0; j < n; j++){
+                if(j > 0){
+                    // current cell = old top cell + old left cell
+                    dp[j] = dp[j] + dp[j-1];
+                }
+            }
+        }
+        
+        return dp[n-1];
+    }
+    
+    public int uniquePathsWithObstaclesBacktrack(int[][] obstacleGrid) {
+        if(obstacleGrid == null || obstacleGrid.length == 0){
+            return 0;
+        }
+        int[][] count = new int[obstacleGrid.length][obstacleGrid[0].length];
+        backtrack(obstacleGrid, 0, 0, count);
+        
+        return count[obstacleGrid.length-1][obstacleGrid[0].length-1];
+    }
+    
+    private void backtrack(int[][] grid, int i, int j, int[][] count){
+        if(count[i][j] != 0){
+            count[i][j]++;
+            return;
+        }
+        if((i == grid.length -1) && (j == grid[0].length - 1) && grid[i][j] == 0){
+            count[i][j]++;
+            return;
+        }
+        if(grid[i][j] == 1){
+            return;
+        }
+        
+        int dirs[][] = new int[][]{{1, 0}, {0, 1}};   
+        for(int[] dir : dirs){
+            if((i+dir[0] < grid.length) && (j+dir[1] < grid[0].length) && (grid[i+dir[0]][j+dir[1]] == 0)){
+                backtrack(grid, i+dir[0], j+dir[1], count);
+            }
+        }
+    }
+    
+    public int uniquePathsWithObstaclesDp(int[][] obstacleGrid) {
+        if(obstacleGrid == null || obstacleGrid.length == 0){
+            return 0;
+        }
+        int[] dp = new int[obstacleGrid[0].length];
+        
+        dp[0] = 1;
+        for(int i = 0; i < obstacleGrid.length; i++){
+            for(int j = 0; j < obstacleGrid[0].length; j++){
+                if(obstacleGrid[i][j] == 1){
+                    dp[j] = 0;
+                }
+                else if(j > 0){
+                    // current cell = old top cell + old left cell
+                    dp[j] = dp[j] + dp[j-1];
+                }
+            }
+        }
+        
+        return dp[obstacleGrid[0].length-1];
+    }
+    
+    public int lengthOfLIS(int[] nums) {
+        if(nums == null || nums.length == 0){
+            return 0;
+        }
+        int[] lis = new int[nums.length];
+        lis[0] = 1;
+        int max = 1;
+        
+        for(int i = 1; i < nums.length; i++){
+            lis[i] = 1;
+            for(int j = 0; j < i; j++){
+                if(nums[i] > nums[j]) {
+                    lis[i] = Math.max(lis[i], 1+lis[j]);
+                    max = Math.max(max, lis[i]);
+                }
+            }
+        }
+        
+        return max;
+    }
+    
+    public int minPathSum(int[][] grid) {
+        if(grid == null || grid.length == 0){
+            return 0;
+        }
+        
+        int dp[][] = new int[grid.length][grid[0].length];
+        dp[0][0] = grid[0][0];
+        // if only go down then sum is increasing
+        for(int i = 1; i < grid.length; i++){
+            dp[i][0] = dp[i-1][0] + grid[i][0];
+        }
+        // if only go right then sum is increasing
+        for(int j = 1; j < grid[0].length; j++){
+            dp[0][j] = dp[0][j-1] + grid[0][j];
+        }
+        
+        // now walk - we can reach a grid either from top (i-1, j) or from left (i, j-1)
+        for(int i = 1; i < grid.length; i++){
+            for(int j = 1; j < grid[0].length; j++){
+                dp[i][j] = grid[i][j] + Math.min(dp[i-1][j], dp[i][j-1]); 
+            }
+        }
+        
+        return dp[grid.length-1][grid[0].length-1];
+    }
+    
+    public int minPathSum2(int[][] grid) {
+        if(grid == null || grid.length == 0){
+            return 0;
+        }
+        
+        int dp[] = new int[grid[0].length];
+        dp[0] = grid[0][0];
+        // if only go right then sum is increasing
+        for(int j = 1; j < grid[0].length; j++){
+            dp[j] = dp[j-1] + grid[0][j];
+        }
+        
+        // now walk - we can reach a grid either from top (i-1, j) or from left (i, j-1)
+        for(int i = 1; i < grid.length; i++){
+            dp[0] = dp[0] + grid[i][0];
+            for(int j = 1; j < grid[0].length; j++){
+                dp[j] = grid[i][j] + Math.min(dp[j], dp[j-1]); 
+            }
+        }
+        
+        return dp[grid[0].length-1];
+    }
+    
     public static void main(String[] args) {
         
         Test t = new Test();
+        
+        int msp = t.minPathSum(new int[][] {{1,3,1}, {1,5,1}, {4,2,1}});
+        
+        int lis = t.lengthOfLIS(new int[] {-2, -1});
         
         int ft = t.fourListSum(new int[] {-1,-1}, new int[] {-1,1}, new int[] {-1,1}, new int[] {1,-1});
         
