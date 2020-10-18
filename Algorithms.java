@@ -28,6 +28,7 @@ import java.util.regex.Pattern;
 
 import test.Test.Graph.Edge;
 
+//connected components
 class Solution {
     int m;
     int n;
@@ -36,7 +37,7 @@ class Solution {
     int count;
     
     public int gridToSetIndex(int i, int j){
-        return i*m + j;
+        return i*n + j;
     }
     
     public int find(int x){
@@ -54,8 +55,9 @@ class Solution {
         
         if(rootX == rootY)
             return;
-        else
+        else{
             count--;
+        }
         
         if(size[rootX] >= size[rootY]){
             size[rootX] += size[rootY];
@@ -82,24 +84,30 @@ class Solution {
         size = new int[m*n];
         count = 0;
         
-        for(int i = 0; i < parent.length; i++){
-            parent[i] = i;
-            size[i] = 1;
-            count++;
+        for(int i = 0; i< m; i++){
+            for (int j = 0; j < n; j++){
+                if(grid[i][j] == '1'){
+                    int x = gridToSetIndex(i, j);
+                    parent[x] = x;
+                    size[x] = 1;
+                    count++;
+                }
+            }
         }
         
         int[][] neighbors = {{1,0},{-1,0},{0,1},{0,-1}};
         int islands = 0;
         for(int i = 0; i< m; i++){
             for (int j = 0; j < n; j++){
-                int x = gridToSetIndex(i, j);
-                
                 // if land then test if neighbor grids are also part of same land
                 if(grid[i][j] == '1'){
                     for(int[] nbr : neighbors){
-                        int y = gridToSetIndex(i+nbr[0], j+nbr[1]);
+                        int ni = i+nbr[0];
+                        int nj = j+nbr[1];
 
-                        if (x >= 0 && x < m && y >= 0 && y < n && grid[x][y] == '1') {
+                        if (ni >= 0 && ni < m && nj >= 0 && nj < n && grid[ni][nj] == '1') {
+                            int x = gridToSetIndex(i, j);
+                            int y = gridToSetIndex(ni, nj);
                             union(x, y);
                         }
                     }
@@ -108,6 +116,135 @@ class Solution {
         }
         
         return count;
+    }
+    
+    
+    // 1 ms solution
+    public int numIslands2(char[][] grid) {
+        if (grid == null || grid.length == 0 || grid[0].length == 0)  {
+            return 0;  
+        }
+        
+        int m = grid.length;
+        int n = grid[0].length;
+        int count = 0;
+        
+        // for each cell do a connected componenr walk
+        for(int i = 0; i < m; i++) {
+            for(int j = 0; j < n; j++) {
+                if(grid[i][j] == '1') {
+                    // walk to connected component and mark them with same component
+                    walkDFS(grid, i, j);
+                    count++;
+                }
+            }
+        }
+        
+        return count;
+    }
+    
+    private void walkDFS(char[][] grid, int i, int j){
+        if(i < 0 || j < 0 || i >= grid.length || j >= grid[0].length || grid[i][j] == '0'){
+            return;
+        }
+        grid[i][j] = '0';// mark as visited [same component]
+        walkDFS(grid, i+1, j);
+        walkDFS(grid, i, j+1);
+        walkDFS(grid, i-1, j);
+        walkDFS(grid, i, j-1);
+    }
+    
+    // 2 ms solution
+    public int maxAreaOfIsland(int[][] grid) {
+        if (grid == null || grid.length == 0 || grid[0].length == 0)  {
+            return 0;  
+        }
+        
+        int m = grid.length;
+        int n = grid[0].length;
+        int maxArea = 0;
+        
+        // for each cell do a connected componenr walk
+        for(int i = 0; i < m; i++) {
+            for(int j = 0; j < n; j++) {
+                if(grid[i][j] == 1) {
+                    // walk to connected component and mark them with same component
+                    int area = walkDFSAndComputeArea(grid, i, j);
+                    maxArea = Math.max(maxArea, area);
+                }
+            }
+        }
+        
+        return maxArea;
+    }
+    
+    private int walkDFSAndComputeArea(int[][] grid, int i, int j){
+        if(i < 0 || j < 0 || i >= grid.length || j >= grid[0].length || grid[i][j] == 0){
+            return 0;
+        }
+        grid[i][j] = 0;// mark as visited [same component]
+        int area = 1;
+        area += walkDFSAndComputeArea(grid, i+1, j);
+        area += walkDFSAndComputeArea(grid, i, j+1);
+        area += walkDFSAndComputeArea(grid, i-1, j);
+        area += walkDFSAndComputeArea(grid, i, j-1);
+        
+        return area;
+    }
+}
+
+class SorroudedRegionsSolution {
+    char[][] board;
+    public void solve(char[][] board) {
+        if (board == null || board.length == 0 || board[0].length == 0)  {
+            return;  
+        }
+        
+        this.board = board;
+        int m = board.length;
+        int n = board[0].length;
+        
+        // for each boundary O mark them as non-changeable '-''
+        // walk the boundary O's and mark all O's reachable
+        // left col
+        for(int i = 0; i < m; i++){
+            walkDFS(i, 0);
+        }
+        // top row
+        for(int j = 0; j < n; j++){
+            walkDFS(0, j);
+        }
+        // right col
+        for(int i = 0; i < m; i++){
+            walkDFS(i, n-1);
+        }
+        // bottom row
+        for(int j = 0; j < n; j++){
+            walkDFS(m-1, j);
+        }
+        
+        //now remaining O's can be flipped to X and the - can be flipped back to O
+        for(int i = 0; i < m; i++){
+            for(int j = 0; j < n; j++){
+                if(board[i][j] == 'O'){
+                    board[i][j] = 'X';
+                }
+                else if(board[i][j] == '-'){
+                    board[i][j] = 'O';
+                }                
+            }
+        }
+    }
+    
+    private void walkDFS(int i, int j){
+        if(i < 0 || j < 0 || i > board.length-1 || j > board[0].length-1 || board[i][j] == 'X' || board[i][j] == '-' ){
+            return;
+        }
+        board[i][j] = '-'; // mark as visited [same component]
+        walkDFS(i+1, j);
+        walkDFS(i, j+1);
+        walkDFS(i-1, j);
+        walkDFS(i, j-1);
     }
 }
 
@@ -710,27 +847,64 @@ public class Test {
     }
     
     public int[] searchRange(int[] nums, int target) {
+        int res[] = new int[]{-1,-1};
+        if(nums == null || nums.length == 0){
+            return res;
+        }
+        if(nums.length == 1){
+            if(nums[0] == target){
+                return new int[]{0,0};
+            }
+            else return res;
+        }
+        
+        // find the left most target
         int l = 0;
         int h = nums.length - 1;
-        int start = -1;
-        int end = -1;
-        
+        int mid = (h+l)/2;
         while(l < h){
-            int mid = l + (h-l)/2;
-            
+            mid = (h+l)/2;
+            // if we find target - keep continue to search in the left
             if(nums[mid] == target){
-                end = Math.max(end, mid);
-                l = mid+1;
+                h = mid;
             }
-            else if(nums[mid] < target){
-                l = mid+1;
+            // if mid is higher then search in left part
+            else if(nums[mid] > target){
+                h = mid;
             }
             else{
-                h = mid;
+                l = mid+1;
             }
         }
         
-        return new int[]{start, end};
+        if(nums[l] == target){
+            res[0] = l;
+        }
+        else{
+            return res;
+        }
+        
+        // find the right most target
+        h = nums.length - 1;
+        while(l < h){
+            mid = (h+l)/2 + 1; // make mid to the right
+            
+            // if we find target - keep continue to search in the right
+            if(nums[mid] == target){
+                l = mid;
+            }
+            // if mid is higher then search in left part
+            else if(nums[mid] > target){
+                h = mid-1;
+            }
+            else{
+                l = mid;
+            }
+        }
+        
+        res[1] = h;
+        
+        return res;
     }
     
     public List<List<Integer>> threeSum(int[] nums) {
@@ -2811,6 +2985,47 @@ public class Test {
         }
         
         return dp[grid[0].length-1];
+    }
+    
+    public int calculateMinimumHP(int[][] dungeon) {
+        if(dungeon == null || dungeon.length == 0){
+            return 0;
+        }
+        int m = dungeon.length;
+        int n = dungeon[0].length;
+        
+        // dp[i][j] is minimum health needed at location i,j
+        // goal is to minimize dp[0,0] such that knight is alive (>0)
+        // we can compute the table bottom up 
+        int dp[][] = new int[dungeon.length][dungeon[0].length];
+        
+        // to be in the princess celll kinght needs at least 1 health after fighting demons
+        dp[m-1][n-1] = Math.max(1, 1-dungeon[m-1][n-1]);
+        // intializie the boudnary conditions bottom up
+        // imagine that knight had a oracle and knows all the grids state
+        // so, he imagined himslef to start in precess cell and moving up/right with 
+        // the princess and tracing his route back to initial posiotion
+        
+        // moving up along the boundary - at every cell kinght needs at least of 1 health after fighting demons
+        for(int i = m-2; i >= 0; i--){
+            dp[i][n-1] = Math.max(1, dp[i+1][n-1]-dungeon[i][n-1]);
+        }
+        // moving left along the boundary - at every cell kinght needs at least of 1 health after fighting demons
+        for(int j = n-2; j >= 0; j--){
+            dp[m-1][j] = Math.max(1, dp[m-1][j+1]-dungeon[m-1][j]);
+        }
+        
+        // now walk bottom up
+        for(int i = m-2; i >= 0; i--){
+            for(int j = n-2; j >= 0; j--){
+                int healthUp = Math.max(1, dp[i+1][j]-dungeon[i][j]);
+                int healthLeft = Math.max(1, dp[i][j+1]-dungeon[i][j]);
+                // minimize the positive health neeed.
+                dp[i][j] = Math.min(healthUp, healthLeft);
+            }
+        }
+        
+        return dp[0][0];
     }
     
     public static void main(String[] args) {
