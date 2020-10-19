@@ -193,6 +193,57 @@ class Solution {
     }
 }
 
+class LongestIncreasingPathSolution {
+    int[][] lipLens;
+    public int longestIncreasingPath(int[][] matrix) {
+        if (matrix == null || matrix.length == 0 || matrix[0].length == 0)  {
+            return 0;  
+        }
+        
+        int m = matrix.length;
+        int n = matrix[0].length;
+        int maxPathLen = 0;
+        lipLens = new int[m][n];
+        
+        // for each cell do a connected componenr walk
+        for(int i = 0; i < m; i++) {
+            for(int j = 0; j < n; j++) {
+                // walk to connected component and mark them with same component
+                int lipLen = walkDFSAndComputeLip(matrix, i, j);
+                maxPathLen = Math.max(maxPathLen, lipLen);
+            }
+        }
+        
+        return maxPathLen;
+    }
+    
+    private int walkDFSAndComputeLip(int[][] matrix, int i, int j){
+        if(i < 0 || j < 0 || i >= matrix.length || j >= matrix[0].length){
+            return 0;
+        }
+        if(lipLens[i][j] > 0){
+            return lipLens[i][j];
+        }
+        
+        int lipLen = 0;
+        if(i < matrix.length-1 && matrix[i+1][j] > matrix[i][j]){
+            lipLen = Math.max(lipLen, walkDFSAndComputeLip(matrix, i+1, j));
+        }
+        if(j < matrix[0].length-1 && matrix[i][j+1] > matrix[i][j]){
+            lipLen = Math.max(lipLen, walkDFSAndComputeLip(matrix, i, j+1));
+        }
+        if(i > 0 && matrix[i-1][j] > matrix[i][j]){
+            lipLen = Math.max(lipLen, walkDFSAndComputeLip(matrix, i-1, j));
+        }
+        if(j > 0 && matrix[i][j-1] > matrix[i][j]){
+            lipLen = Math.max(lipLen, walkDFSAndComputeLip(matrix, i, j-1));
+        }
+            
+        lipLens[i][j] = 1+lipLen;
+        return lipLens[i][j];
+    }
+}
+
 class SorroudedRegionsSolution {
     char[][] board;
     public void solve(char[][] board) {
@@ -1229,7 +1280,7 @@ public class Test {
             return new int[0][0];
         }
         
-        // O(nlgn) sort
+        // O(nlgn) sort based on start
         Arrays.sort(intervals, (a,b) -> a[0]-b[0]);
         
         LinkedHashSet<int[]> res = new LinkedHashSet<>();
@@ -3026,6 +3077,166 @@ public class Test {
         }
         
         return dp[0][0];
+    }
+    
+    public int findLongestChain(int[][] pairs) {
+        Arrays.sort(pairs, (a, b) -> (a[1] - b[1])); //Assume that Pair class implements comparable with the compareTo() method such that (a, b) < (c,d) iff b<c
+        int chainLength = 0;
+        
+        //select the first pair of the sorted pairs array
+        chainLength++;
+        int prev = 0;
+
+        for(int i=1;i<pairs.length; i++)
+        {
+            if(pairs[i][0] > pairs[prev][1])
+            {
+                chainLength++;
+                prev = i;
+            }
+        }
+        return chainLength; 
+    }
+    
+    public List<List<Integer>> findIncreasingSubsequences(int[] nums) {
+        List<List<Integer>> res = new ArrayList<>();
+        
+        combinationForLis(nums, 0, new LinkedList<>(), res);
+        
+        return res;
+    }
+    
+    private void combinationForLis(int nums[], int start, LinkedList<Integer> cur, List<List<Integer>> res){
+        if(cur.size() > 1){
+            res.add(new ArrayList<>(cur));
+        }
+        
+        Set<Integer> visited = new HashSet<>();
+        for(int i = start; i < nums.length; i++){
+            if(visited.contains(nums[i])) continue;
+            if(cur.isEmpty() || (cur.peekLast() <= nums[i])) {
+                cur.add(nums[i]);
+                visited.add(nums[i]);
+                combinationForLis(nums, i+1, cur, res);
+                cur.removeLast();
+            }
+        }
+    }
+    
+    public int findNumberOfLIS(int[] nums) {
+        if(nums == null || nums.length == 0){
+            return 0;
+        }
+        int[] lis = new int[nums.length];
+        int max = 0;
+        int res = 0;
+        int counts[] = new int[nums.length];
+        
+        for(int i = 0; i < nums.length; i++){
+            lis[i] = 1;
+            counts[i] = 1;
+            for(int j = 0; j < i; j++) {
+                if(nums[i] > nums[j]) {
+                    // if another prefix exists that makes same length subseq 
+                    // including current number then add the counts
+                    if(lis[i] == lis[j]+1){
+                        counts[i] += counts[j];
+                    }
+                    // if a longer prefix exists that makes more length subseq 
+                    // including current number them reset the count
+                    else if(lis[i] < lis[j]+1){
+                        lis[i] = lis[j]+1;
+                        counts[i] = counts[j];
+                    }
+                }
+            }
+            
+            // set the longest subseq and update the result accordingly
+            if(lis[i] > max){
+                max = lis[i];
+                res = counts[i];
+            }
+            else if(lis[i] == max){
+                res += counts[i];
+            }
+        }
+        
+        return res;
+    }
+    
+    public List<Integer> rightSideViewOfBT(TreeNode root) {
+        List<Integer> res = new LinkedList<>();
+        
+        if(root == null){
+            return res;
+        }
+        
+        Queue<TreeNode> queue = new LinkedList<>();
+        queue.add(root);
+        int perLevelNodeCount = 1;
+        
+        while(!queue.isEmpty()){
+            TreeNode node = queue.remove();
+            perLevelNodeCount--;
+            
+            // now for BFS walk, add the childrens to queue
+            if(node.left != null){
+                queue.add(node.left);
+            }
+            if(node.right != null){
+                queue.add(node.right);
+            }
+            
+            // if count becomes zero that means this is the right most node in the level
+            // add it to result
+            // also reset count for next level based on queue size
+            if(perLevelNodeCount == 0){
+                res.add(node.val);
+                perLevelNodeCount = queue.size();
+            }
+        }
+        
+        return res;
+    }
+    
+    public ListNode rotateListRight(ListNode head, int k) {
+        if(k == 0 || head == null || head.next == null){
+            return head;
+        }
+        
+        int n = 0;
+        ListNode slow = head;
+        while(slow != null){
+            n++;
+            slow = slow.next;
+        }
+        
+        k = k%n;
+        if(k == 0){
+            return head;
+        }
+        
+        // now split at k from end
+        slow = head;
+        ListNode fast = head;
+        while(k-- > 0){
+            fast = fast.next;
+        }
+        
+        ListNode prevSlow = null;
+        ListNode prevFast = null;
+        while(fast != null){
+            prevSlow = slow;
+            slow = slow.next;
+            prevFast = fast;
+            fast = fast.next;
+        }
+        
+        prevFast.next = head;
+        prevSlow.next = null;
+        head = slow;
+        
+        return head;
     }
     
     public static void main(String[] args) {
