@@ -1085,13 +1085,14 @@ public class Test {
     
     class LongestPalindrome {
         int startIndex=0, max=0;
+        // faster but not intuitive
         public String longestPalindrome(String s) {
             if (s.length()<2)
                 return s;
             char[] c= s.toCharArray();
             int i=0;
             while ( i < c.length){
-                System.out.println(i);
+                //System.out.println(i);
                 i = checkPalin(c, i);
             }
             
@@ -1101,12 +1102,15 @@ public class Test {
         public int checkPalin(char[] c, int i){
             int end = i+1;
             
+            // skip all the duplicate charas on right as duplicates character substrings are by default palindrom 
             while (end < c.length && c[i] == c[end])
                 end ++;
+            // suggesting caller where to start in next call
             int next = end;
             
             int start = i-1;
-            
+            // now extend to left of i such that the right of end (next) is extend
+            // any mismath should stop  extending
             while (start>-1 && end < c.length){
                 if (c[start] == c[end]){
                     start--;
@@ -1116,6 +1120,8 @@ public class Test {
                     break;
             }
             
+            // now we have a localMaxima palindrom of length end - start + 1
+            // update global maxima
             if (end-start-1 > max){
                 max = end-start-1;
                 startIndex = ++start;
@@ -1125,6 +1131,52 @@ public class Test {
             return next;
             
         }
+        
+        // intuitive
+        // for each index extend to both side to either get a even length palindrom with center at space between i-1 and i
+        // or extend to both side to get a even length palindrom with center at i
+        public String longestPalindromN2(String str){
+            int n = str.length();
+            if(n <= 1){
+                return str;
+            }
+            
+            int l = 0;
+            int h = 0;
+            int start = 0;
+            int maxlen = 1;
+            
+            for(int i = 1; i < n; i++){
+                //palindrom of even length with center in space between i-1 and i
+                l = i-1;
+                h = i;
+                int len = 0;
+                while(l >= 0 && h <= n-1 && (str.charAt(l) == str.charAt(h))){
+                    len = h-l+1;
+                    if(len > maxlen){
+                        start = l;
+                        maxlen = len;
+                    }
+                    l--;
+                    h++;
+                }
+                
+                //palindrom of odd length with center at i
+                l = i;
+                h = i;
+                while(l >= 0 && h <= n-1 && (str.charAt(l) == str.charAt(h))){
+                    len = h-l+1;
+                    if(len > maxlen){
+                        start = l;
+                        maxlen = len;
+                    }
+                    l--;
+                    h++;
+                }
+            }
+            
+            return str.substring(start, start+maxlen);
+        }        
     }
     
     public boolean increasingTripletSubseq(int[] a) {
@@ -1581,6 +1633,21 @@ public class Test {
         }
     }
     
+    public ListNode reverseList(ListNode head) {
+        ListNode reversed = null;
+        ListNode cur = head;
+        ListNode temp = null;
+        
+        while(cur != null){
+            temp = cur;
+            cur = cur.next;
+            temp.next = reversed;
+            reversed = temp;
+        }
+        
+        return reversed;
+    }
+    
     public ListNode reverse(ListNode head, ListNode reversed) {
         if(head == null) {
             return reversed;
@@ -1986,6 +2053,10 @@ public class Test {
         
         return result;
     }   
+    
+    public List<List<Integer>> fourSum(int[] nums, int target) {
+        return kSum(nums, target, 4);
+    }
     
     public List<List<Integer>> kSum(int[] nums, int targetSum, int k) {
         if(nums == null || nums.length < k || k < 2) {
@@ -2561,6 +2632,12 @@ public class Test {
         
         temp = null;
         count = 0;
+        // reverse k nodes startifrom head
+        // 1 -> 2 -> 3 -> 4 -> 5 -> null , and k = 3
+        // then temp pointing at 4 -> 5 -> null
+        // so revert the 1 -> 2 -> 3 portion
+        // result would be 3 -> 2 -> 1 -> 4 -> 5 -> null
+        //
         while(head != null && count < k){
             temp = head.next;
             head.next = reversed;
@@ -2569,6 +2646,7 @@ public class Test {
             count++;
         }
 
+        //c
         if(prevHead != null){
             prevHead.next = reverseKGroup(head, k);
         }
@@ -2670,6 +2748,14 @@ public class Test {
         return slow;
     }
     
+    /*
+     * Given n non-negative integers representing an elevation map where the width of 
+     * each bar is 1, compute how much water it can trap after raining.
+     *  Input: height = [0,1,0,2,1,0,1,3,2,1,2,1]
+     *  Output: 6
+     *  Explanation: The above elevation map is represented by array [0,1,0,2,1,0,1,3,2,1,2,1]. 
+     *  In this case, 6 units of rain water (blue section) are being trapped.
+     */
     public int trap(int[] tower) {
         final int n = tower.length;
         if(n == 0){
@@ -2697,6 +2783,31 @@ public class Test {
         }
         
         return trappedWater;
+    }
+    
+    /*
+     * Given n non-negative integers a1, a2, ..., an , where each represents a point at 
+     * coordinate (i, ai). n vertical lines are drawn such that the two endpoints of 
+     * the line i is at (i, ai) and (i, 0). Find two lines, which, together with 
+     * the x-axis forms a container, such that the container contains the most water.
+     * 
+     * Input: height = [1,8,6,2,5,4,8,3,7]
+     * Output: 49
+     * Explanation: The above vertical lines are represented by array [1,8,6,2,5,4,8,3,7]. 
+     * In this case, the max area of water (blue section) the container can contain is 49.
+     */
+    public int ContaineWithMostWaterMaxArea(int[] height) {
+        int len = height.length, low = 0, high = len -1 ;  
+        int maxArea = 0;  
+        while (low < high) {  
+         maxArea = Math.max(maxArea, (high - low) * Math.min(height[low], height[high]));  
+         if (height[low] < height[high]) {  
+           low++;  
+         } else {  
+           high--;  
+         }  
+        }  
+        return maxArea;  
     }
     
     class SolutionMergeKList {
@@ -2779,6 +2890,30 @@ public class Test {
         }
         else{
             return pow*pow;
+        }
+    }
+    
+    public List<String> generateParenthesis(int n) {
+        ArrayList<String> res = new ArrayList<String>();
+        if(n <= 0){
+            return res;
+        }
+        
+        generateParenthesis("", n, 0, res);
+        
+        return res;
+    }
+    
+    public void generateParenthesis(String str, int left, int right, ArrayList<String> res){
+        if(right == 0 && left == 0){
+            res.add(str);
+        }
+        
+        if(right > 0){
+            generateParenthesis(str+")", left, right-1, res);
+        }
+        if(left > 0){
+            generateParenthesis(str+"(", left-1, right+1, res);
         }
     }
     
@@ -3238,6 +3373,363 @@ public class Test {
         
         return head;
     }
+    
+    public int[][] intervalIntersection(int[][] A, int[][] B) {
+        if(A == null || B == null || A.length == 0 || B.length == 0){
+            return new int[][]{};
+        }
+        
+        int i = 0, j = 0;
+        int m = A.length;
+        int n = B.length;
+        List<int[]> res = new ArrayList<>();
+        
+        while(i < m && j < n){
+            // intersection possible if one's start within another range
+            if((A[i][0] <= B[j][1]) && (B[j][0] <= A[i][1])){
+                // intersection is the max start and minium end between A[i] and B[j]
+                res.add(new int[]{Math.max(A[i][0], B[j][0]), Math.min(A[i][1], B[j][1])});
+            }
+            
+            // A[i] is on left or equal of B[j] - move i
+            if(A[i][1] <= B[j][1]){
+                i++;
+            }
+            // B[j] is on left of A[i] - move j
+            else {
+                j++;
+            }
+        }
+        
+        int[][] ret = new int[res.size()][2];
+        return res.toArray(ret);
+    }
+    
+    public int numSubarrayProductLessThanK(int[] nums, int k) {
+        if(nums == null | nums.length == 0 || k == 0){
+            return 0;
+        }
+        // sliding a shrinking/growing window
+        int count = 0;
+        int i = 0, j = 0;
+        long prod = 1;
+        
+        // forward window slide to right
+        for(j = 0; j < nums.length; j++){
+            prod *= nums[j];
+            // if product is already more than equals to k then shrink the window on left
+            while(i <= j && prod >= k){
+                prod /= nums[i++];
+            }
+            
+            // at this point we have a contagious subarray between i and j 
+            // that has product less than k
+            // as all numbers are positive, if the product of entire contagious 
+            // subarray is les than k, then each of the prefix contagious subarray
+            // of this array also has product less than k.
+            // for a subarry of length (j-i+1) has (j-i+1) such subarrays
+            count += (j-i+1);
+        }
+        
+        return count;
+    }
+    
+    public int maxSumSubArray(int[] a) {
+        int localMaxima = a[0];
+        int globalMaxima = a[0];
+        
+        // we compute localMaxima of subarray so far ending at each index
+        for(int i = 1; i< a.length; i++){
+            // for each element we get maximum sum subarray either by extending the localMaxima (prev best subaray)
+            // by adding the current element to it, OR we reset and start a new subarray from this element because
+            // it yelds largest sum
+            localMaxima = Math.max(a[i], localMaxima+a[i]);
+            // compute the global maxima across all such subarrays
+            globalMaxima = Math.max(globalMaxima, localMaxima);
+        }
+        
+        return globalMaxima;
+    }
+    
+    public int maxProductSubarray(int[] a) {
+        if(a == null || a.length == 0){
+            return 0;
+        }
+        
+        // kadanes algorithm
+        // at a given element we can have two extreme products
+        // one is the most positive value if a[i] is positive (max)
+        // other is the most negative if a[i] is negative (min)
+        // so we track two extreme max        
+        int localPositiverMax = a[0];
+        int localNegativerMax = a[0];
+        int globalMaxProd = a[0];
+
+        for(int i = 1; i < a.length; i++){
+            // if current element is negative then multiplying we can swap localPositiverMax and localNegativerMax
+            if(a[i] < 0){
+                int temp = localPositiverMax;
+                localPositiverMax = localNegativerMax;
+                localNegativerMax = temp;
+            }
+            
+            // at a given index we make highest product either
+            // (1)  by multiplying current value with the previous local maxima subarray 
+            // (2)  we start a new subarray at current location by reseting max with the current value 
+            localPositiverMax = Math.max(a[i], a[i]*localPositiverMax);
+            localNegativerMax = Math.min(a[i], a[i]*localNegativerMax);
+            // compute the global max so far
+            globalMaxProd = Math.max(globalMaxProd, localPositiverMax);
+        }
+
+        return globalMaxProd;
+    }
+    
+    public int subarraySum(int[] nums, int k) {
+        int sum = 0;
+        int count = 0;
+        // map from sum to count of such prefixes
+        final Map<Integer, Integer> candidates = new HashMap<>();
+        candidates.put(0, 1);
+
+        for (int i = 0; i < nums.length; i++) {
+            sum += nums[i];
+            
+            if(candidates.containsKey(sum-k)){
+                // a subarray found
+                count += candidates.get(sum-k);
+            }
+            
+            candidates.put(sum, candidates.getOrDefault(sum, 0)+1);
+        }
+        return count;
+    }
+    
+    public int subarraysDivByK(int[] nums, int k) {
+        int sum = 0;
+        int count = 0;
+        // map from sum to count of such prefix sum
+        final Map<Integer, Integer> candidates = new HashMap<>();
+        candidates.put(0, 1);
+
+        for (int i = 0; i < nums.length; i++) {
+            sum = (sum + nums[i])%k;
+            if(sum < 0) sum += k;
+            
+            count += candidates.getOrDefault(sum, 0);
+            candidates.put(sum, candidates.getOrDefault(sum, 0)+1);
+        }
+        return count;
+    }
+    
+    // nums are non-negative, k can be 0 and negative
+    // sum needs to be multiple of k
+    public boolean checkSubarraySum(int[] nums, int k) {
+        int sum = 0;
+        // map from sum to oldest index of such prefix sum
+        final Map<Integer, Integer> candidates = new HashMap<>();
+        candidates.put(0, -1);
+
+        for (int i = 0; i < nums.length; i++) {
+            sum += nums[i];
+            if(k != 0) sum %= k;
+            
+            // check if at least 2 contagious elements makde that sum
+            if(candidates.containsKey(sum)){
+                if((i - candidates.get(sum)) >= 2) return true;
+            }
+            else 
+                candidates.put(sum, i);
+        }
+        return false;
+    }
+    
+    /*
+     * You are given two non-empty linked lists representing two non-negative integers. 
+     * The digits are stored in reverse order, and each of their nodes contains a single digit. 
+     * Add the two numbers and return the sum as a linked list.
+     */
+    public ListNode addTwoNumbers(ListNode l1, ListNode l2) {
+        int carryover = 0;
+        ListNode result = null;
+        ListNode headResult = new ListNode(-1);//dummy
+        while(l1 != null || l2 != null || carryover > 0){
+            int first = (l1 != null) ? l1.val : 0;
+            int second = (l2 != null) ? l2.val : 0;
+            int sum = (first+second+carryover)%10;
+            carryover =  (first+second+carryover)/10;
+            
+            if (result == null) {
+                result = new ListNode(sum);
+                headResult.next = result;
+            }
+            else{
+                result.next = new ListNode(sum); 
+                result = result.next;
+            }
+            
+            l1 = (l1 == null) ? l1 : l1.next;
+            l2 = (l2 == null) ? l2 : l2.next;
+        }
+        
+        return headResult.next;
+    }
+    
+    /*
+     * You are given two non-empty linked lists representing two non-negative integers. 
+     * The most significant digit comes first and each of their nodes contain a single digit. 
+     * Add the two numbers and return it as a linked list.
+     * 
+     *  Example:
+     *  Input: (7 -> 2 -> 4 -> 3) + (5 -> 6 -> 4
+     *  Output: 7 -> 8 -> 0 -> 7
+     */
+    public ListNode addTwoNumbersMSB(ListNode l1, ListNode l2) {
+        // two stack 
+        // no modifications of input lists
+        Stack<Integer> st1 = new Stack<>();
+        Stack<Integer> st2 = new Stack<>();
+        
+        while(l1 != null){
+            st1.push(l1.val);
+            l1 = l1.next;
+        }
+        while(l2 != null){
+            st2.push(l2.val);
+            l2 = l2.next;
+        }
+        
+        int sum = 0;
+        int carry = 0;
+        ListNode dummyHead = new ListNode(-1);
+        while(!st1.isEmpty() || !st2.isEmpty() || carry != 0){
+            sum = carry;
+            if(!st1.isEmpty()){
+                sum += st1.pop();
+            }
+            if(!st2.isEmpty()){
+                sum += st2.pop();
+            }
+            
+            ListNode node = new ListNode(sum%10);
+            node.next = dummyHead.next;
+            dummyHead.next = node;
+            
+            carry = sum/10;
+        }
+        
+        return dummyHead.next;
+    }
+    
+    public class MedianOfTwoSorredArraySolution {
+        public double findMedianSortedArrays(int[] nums1, int[] nums2) {
+            return findMedianSortedArrays1(nums1, nums2);
+        }
+        public double findMedianSortedArrays1(int A[], int B[]) {
+            int m = A.length;
+            int n = B.length;
+         
+            if ((m + n) % 2 != 0) // odd
+                return (double) findKth(A,0, m - 1, B, 0, n - 1, (m + n) / 2);
+            else { // even
+                return (findKth(A, 0, m - 1, B, 0, n - 1, (m + n) / 2) 
+                    + findKth(A, 0, m - 1, B, 0, n - 1, (m + n) / 2 - 1)) * 0.5;
+            }
+        }
+    
+        public int findKth(int A[], int p1, int r1, int B[], int p2, int r2, int k) {
+            int n1 = r1-p1+1;
+            int n2 = r2-p2+1;
+            
+            //base cases
+            if(n1 == 0){
+                return B[p2+k];
+            }
+            if(n2 == 0){
+                return A[p1+k];
+            }
+            //
+            if(k == 0){
+                return Math.min(A[p1], B[p2]);
+            }
+            
+            //select two index i,j from A and B respectively such that If A[i] is between B[j] and B[j-1] 
+            //Then A[i] would be the i+j+1 smallest element because.
+            //Therefore, if we choose i and j such that i+j = k-1, we are able to find the k-th smallest element.
+            int i = n1/(n1+n2)*k;//let's try tp chose a middle element close to kth element in A 
+            int j = k-1 -i;
+            
+            //add the offset
+            int mid1 = Math.min(p1+i, r1);
+            int mid2 = Math.min(p2+j, r2);
+            
+            //mid1 is greater than mid2. So, median is either in A[p1...mid1] or in B[mid2+1...r2].
+            //we have already see B[p2..mid2] elements smaller than kth smallest
+            if(A[mid1] > B[mid2]){
+                k = k - (mid2-p2+1);
+                r1 = mid1;
+                p2 = mid2+1;
+            }
+            //mid2 is greater than or equal mid1. So, median is either in A[mid1+1...r1] or in B[p2...mid2].
+            //we have already see A[p1..mid1] elements smaller than kth smallest
+            else{
+                k = k - (mid1-p1+1);
+                p1 = mid1+1;
+                r2 = mid2;
+            }
+            
+            return findKth(A, p1, r1, B, p2, r2, k);
+        }
+    }
+    
+    public int removeElementsInPlace(int[] nums, int val) {
+        int count = 0;
+        for(int i = 0; i < nums.length; i++){
+            if(nums[i] == val){
+                count++;
+            }
+            else {
+                nums[i-count] = nums[i];
+            }
+        }
+        
+        return nums.length - count;
+    }
+    
+    public int removeDuplicatesFromSortedArray(int[] nums) {
+        int count = 0;
+        for(int j = 1; j < nums.length; j++){
+            // find duplicate spaces
+            if(nums[j-1] == nums[j]) count++;
+            // start filling up spaces with next values
+            // note: meantime the code reaches next value
+            // we have already incremented j with total 'count' duplicated prev element
+            // so, start shifting the new values by count on left
+            else nums[j-count] = nums[j];
+        }
+        
+        //total spaces is equal to count.
+        // so the final length is short of this count
+        return (nums.length - count);
+    }
+    
+    public ListNode removeElementsFromList(ListNode head, int val) {
+        ListNode dummyHead = new ListNode(-1);
+        dummyHead.next = head;
+        ListNode cur = dummyHead;
+        
+        while(cur.next != null){
+            if(cur.next.val == val){
+                cur.next = cur.next.next;
+            }
+            else{
+                cur = cur.next;
+            }
+        }
+        
+        return dummyHead.next;
+    }
+    
     
     public static void main(String[] args) {
         
