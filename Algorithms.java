@@ -4223,6 +4223,60 @@ public class Test {
         }
     }
     
+    // O(n)
+    public int largestRectangleArea(int[] hist) {
+        if(hist == null || hist.length == 0){
+            return 0;
+        }
+        
+        int maxArea = 0;
+        int n = hist.length;
+        // for a given bar the max area is incorporated by the area 
+        // between the lfirst higher bar on the left and first higher bar
+        // on the right
+        
+        int[] left = new int[n];
+        int[] right = new int[n];
+        left[0] = -1;
+        right[n-1] = n;
+        
+        // find first higher bar on the left
+        for(int i = 1; i < n; i++){
+            int j = i - 1;
+            while(j >=0 && hist[j] >= hist[i]){
+                // instead of scanning all left we can skip any bar that is
+                // lower than current. That is we can use left array itself
+                // to jump throught index
+                //j--; 
+                j = left[j];
+            }
+            
+            left[i] = j;
+        }
+        
+        // find first higher bar on the right
+        for(int i = n-2; i >= 0; i--){
+            int j = i + 1;
+            while(j < n && hist[j] >= hist[i]){
+                // instead of scanning all left we can skip any bar that is
+                // lower than current. That is we can use left array itself
+                // to jump throught index
+                //j++;
+                j = right[j];
+            }
+            
+            right[i] = j;
+        }
+        
+        // now compute max area from all area with each bar as the pivot
+        for(int i = 0; i < n; i++){
+            // There are right[i]-left[i]-1 bars between left[i] and right[i]
+            maxArea = Math.max(maxArea, hist[i]*(right[i]-left[i]-1));
+        }
+        
+        return maxArea;
+    }
+    
     public static void main(String[] args) {
         
         Test t = new Test();
