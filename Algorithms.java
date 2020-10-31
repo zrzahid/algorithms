@@ -840,10 +840,10 @@ public class Test {
         return maxPath;
     }
     
-    public int match(int[] text, int[] patt) {
+    private int match(int[] text, int[] patt) {
         int count = 0;
         for(int i = 0; i < patt.length; i++) {
-            if(patt[i] != 0 && text[i] != 0) {
+            if(patt[i] != 0 && text[i] != 0 && text[i] >= patt[i]) {
                 count++;
             }
         }
@@ -852,17 +852,24 @@ public class Test {
     }
     
     public String minLenSuperSubString(String s, String t) {
+        if(t.length() > s.length()){
+            return "";
+        }
+        if(s.equals(t)){
+            return s;
+        }
         
-        int[] histS = new int[26];
+        int[] histS = new int[256];
         Arrays.fill(histS, 0);
-        int[] histT = new int[26];
+        int[] histT = new int[256];
         Arrays.fill(histT, 0);
         
         for(char c : t.toCharArray()) {
-            histT[c-'a']++;
+            histT[c-'A']++;
         }
         
         int start = 0, bestStart = 0, len = 0, minLen = Integer.MAX_VALUE;
+        int targetMatchCount = match(histT, histT);
         
         int j = start;
         while(start < s.length()) {
@@ -870,14 +877,14 @@ public class Test {
             
             // increase the window forward as long as we don't match all the 
             // chars in t at least once
-            while(j < s.length() && matchCount < t.length()) {
-                histS[s.charAt(j)-'a']++;
+            while(j < s.length() && matchCount < targetMatchCount) {
+                histS[s.charAt(j)-'A']++;
                 matchCount = match(histS, histT);
                 j++;
             }
             
             // no solution from this start position
-            if(matchCount < t.length()) {
+            if(matchCount < targetMatchCount) {
                 break;
             }
             // we found a substring
@@ -890,11 +897,199 @@ public class Test {
             }
             
             // try to shrink the window
-            histS[s.charAt(start)-'a']--;
+            histS[s.charAt(start)-'A']--;
             start++;
         }
         
-        return s.substring(bestStart, bestStart+minLen);
+        if(bestStart+minLen <= s.length())
+            return s.substring(bestStart, bestStart+minLen);
+        
+        return "";
+    }
+    
+    public String minLenSuperSubString1(String s, String t) {
+        if(t.length() > s.length()){
+            return "";
+        }
+        if(s.equals(t)){
+            return s;
+        }
+        
+        // keep a map for char frequency of the pattern
+        int[] hist = new int[256];
+        for(int i = 0; i < t.length(); i++){
+            hist[t.charAt(i)-'A']++;
+        }
+        // slide the window till we match all the chars then try to shrink
+        int i = 0, j = 0;
+        int bestStart = 0;
+        int minLen = Integer.MAX_VALUE;
+        int targetCount = t.length();
+        while(j < s.length()) {
+            // to expand the window decrease counter only if the matching char found (counter positive )
+            if(hist[s.charAt(j)-'A'] > 0) {
+               targetCount--;
+            }
+            // expand the window from end
+            hist[s.charAt(j++)-'A']--;
+            
+            // shrink the window from front
+            while(targetCount == 0){
+                if(minLen > j - i){
+                    minLen = j - i;
+                    bestStart = i;
+                }
+                
+                // to shrink the window increase counter only if it was a matching character (counter not negative)
+                if(hist[s.charAt(i)-'A'] >= 0){
+                    targetCount++;
+                }
+                // shrink the window from the front
+                hist[s.charAt(i++)-'A']++;
+            }
+        }
+        
+        return ((minLen != Integer.MAX_VALUE) ? s.substring(bestStart, bestStart+minLen) : "");
+    }
+    
+    // 2 ms 39 MB
+    public int lengthOfLongestSubstring1(String s) {
+        if(s.length() == 0){
+            return 0;
+        }
+
+        // slide the window till we match all the chars then try to shrink
+        int i = 0, j = 0;
+        int maxLen = 0;
+        int targetCount = 0;
+        int[] hist = new int[128];
+        while(j < s.length()) {
+            // to expand the window increase counter only if the matching char found (counter positive )
+            if(hist[s.charAt(j)] > 0) {
+               targetCount++;
+            }
+            // expand the window from end
+            hist[s.charAt(j++)-'A']++;
+            
+            // shrink the window from front
+            while(targetCount > 0){
+                // to shrink the window decrease counter only if it was a matching character (counter positive)
+                if(hist[s.charAt(i)] > 1){
+                    targetCount--;
+                }
+                // shrink the window from the front
+                hist[s.charAt(i++)]--;
+            }
+            
+            maxLen = Math.max(maxLen, j - i);
+        }
+        
+        return maxLen;
+    }
+    
+    // 2 ms 36 MB
+    public int lengthOfLongestSubstring(String s) {
+        if(s == null || s.isEmpty()){
+            return 0;
+        }
+        
+        int lastIndices[] = new int[128];
+        for(int i = 0; i<128; i++){
+            lastIndices[i] = -1;
+        }
+        
+        int maxLen = 0;
+        int curLen = 0;
+        int start = 0;
+        int bestStart = 0;
+        for(int i = 0; i < s.length(); i++){
+            char cur = s.charAt(i);
+            if(lastIndices[cur]  < start){
+                lastIndices[cur] = i;
+                curLen++;
+            }
+            else{
+                int lastIndex = lastIndices[cur];
+                start = lastIndex+1;
+                curLen = i-start+1;
+                lastIndices[cur] = i;
+            }
+            
+            if(curLen > maxLen){
+                maxLen = curLen;
+                bestStart = start;
+            }
+        }
+        
+        return maxLen;
+    }
+    
+    public int lengthOfLongestSubstringAtMostTwoDistinct(String s) {
+        if(s.length() == 0){
+            return 0;
+        }
+
+        // slide the window till we match all the chars then try to shrink
+        int i = 0, j = 0;
+        int maxLen = 0;
+        int targetCount = 0;
+        int[] hist = new int[256];
+        while(j < s.length()) {
+            // to expand the window increase counter if non (zero) or some (> 0) character matches
+            if(hist[s.charAt(j)] == 0) {
+               targetCount++;
+            }
+            // expand the window from end
+            hist[s.charAt(j++)-'A']++;
+            
+            // shrink the window from front
+            while(targetCount > 2){
+                // to shrink the window decrease counter only if it was a matching character (counter positive)
+                if(hist[s.charAt(i)] > 1){
+                    targetCount--;
+                }
+                // shrink the window from the front
+                hist[s.charAt(i++)]--;
+            }
+            
+            maxLen = Math.max(maxLen, j - i);
+        }
+        
+        return maxLen;
+    }
+    
+    public int lengthOfLongestSubstringAtMostKDistinct(String s, int k) {
+        if(s.length() == 0 || k == 0){
+            return 0;
+        }
+
+        // slide the window till we match all the chars then try to shrink
+        int i = 0, j = 0;
+        int maxLen = 0;
+        int targetCount = 0;
+        int[] hist = new int[256];
+        while(j < s.length()) {
+            // to expand the window increase counter if non (zero) or some (> 0) character matches
+            if(hist[s.charAt(j)] == 0) {
+               targetCount++;
+            }
+            // expand the window from end
+            hist[s.charAt(j++)-'A']++;
+            
+            // shrink the window from front
+            while(targetCount > k){
+                // to shrink the window decrease counter only if it was a matching character (counter positive)
+                if(hist[s.charAt(i)] > k-1){
+                    targetCount--;
+                }
+                // shrink the window from the front
+                hist[s.charAt(i++)]--;
+            }
+            
+            maxLen = Math.max(maxLen, j - i);
+        }
+        
+        return maxLen;
     }
     
     public int[] searchRange(int[] nums, int target) {
@@ -1014,6 +1209,8 @@ public class Test {
         }
     }
     
+    // Input: strs = ["eat","tea","tan","ate","nat","bat"]
+    // Output: [["bat"],["nat","tan"],["ate","eat","tea"]]
     public List<List<String>> groupAnagrams(String[] strs) {
         List<List<String>> result = new LinkedList<List<String>>();
         
@@ -1046,43 +1243,6 @@ public class Test {
         return hash;
     }
     
-    public int lengthOfLongestSubstring(String s) {
-        if(s == null || s.isEmpty()){
-            return 0;
-        }
-        
-        int lastIndices[] = new int[256];
-        for(int i = 0; i<256; i++){
-            lastIndices[i] = -1;
-        }
-        
-        int maxLen = 0;
-        int curLen = 0;
-        int start = 0;
-        int bestStart = 0;
-        for(int i = 0; i<s.length(); i++){
-            char cur = s.charAt(i);
-            if(lastIndices[cur]  < start){
-                lastIndices[cur] = i;
-                curLen++;
-            }
-            else{
-                int lastIndex = lastIndices[cur];
-                start = lastIndex+1;
-                curLen = i-start+1;
-                lastIndices[cur] = i;
-            }
-            
-            if(curLen > maxLen){
-                maxLen = curLen;
-                bestStart = start;
-            }
-        }
-        
-        return maxLen;
-        
-    }
-    
     class LongestPalindrome {
         int startIndex=0, max=0;
         // faster but not intuitive
@@ -1097,8 +1257,8 @@ public class Test {
             }
             
             return s.substring(startIndex, startIndex + max);
-            
         }
+        
         public int checkPalin(char[] c, int i){
             int end = i+1;
             
@@ -1275,6 +1435,9 @@ public class Test {
         int n = nums.length;
         int l = 0;
         int h = n-1;
+        // find the index of the smallest value using binary search.
+        // Loop will terminate since mid < hi, and lo or hi will shrink by at least 1.
+        // Proof by contradiction that mid < hi: if mid==hi, then lo==hi and loop would have been terminated.
         while(l < h){
             int mid = (l+h)/2;
             
@@ -1288,10 +1451,11 @@ public class Test {
             }
         }
         
+        // lo==hi is the index of the smallest value (pivot) and also the number of places rotated.
         int pivot = l;
+        // The usual binary search and accounting for rotation.
         l = 0;
         h = n-1;
-        
         while(l <= h){
             int mid = (l+h)/2;
             int actualmid = (mid+pivot)%n;
@@ -2754,8 +2918,8 @@ public class Test {
      *  Input: height = [0,1,0,2,1,0,1,3,2,1,2,1]
      *  Output: 6
      *  Explanation: The above elevation map is represented by array [0,1,0,2,1,0,1,3,2,1,2,1]. 
-     *  In this case, 6 units of rain water (blue section) are being trapped.
-     */
+     *  In this case, 6 units of rain water are being trapped.
+     */    
     public int trap(int[] tower) {
         final int n = tower.length;
         if(n == 0){
@@ -2893,28 +3057,40 @@ public class Test {
         }
     }
     
+    // n = pairs of parentheis
+    // complexity = O((4^n)/√n) -- nth catalan number
     public List<String> generateParenthesis(int n) {
         ArrayList<String> res = new ArrayList<String>();
         if(n <= 0){
             return res;
         }
         
-        generateParenthesis("", n, 0, res);
+        generateParenthesisBackTrack("", 0, 0, n, res);
         
         return res;
     }
     
-    public void generateParenthesis(String str, int left, int right, ArrayList<String> res){
-        if(right == 0 && left == 0){
-            res.add(str);
+    /**
+     * Instead of adding '(' or ')' every time, let's only add them when we know it will remain a valid 
+     * sequence. We can do this by keeping track of the number of opening and closing brackets we have 
+     * placed so far.
+     * 
+     * We can start an opening bracket if we still have one (of n) left to place. And we can start a 
+     * closing bracket if it would not exceed the number of opening brackets.
+     */
+    public void generateParenthesisBackTrack(String cur, int open, int close, int max, List<String> list){
+        
+        if(cur.length() == max*2){
+            list.add(cur);
+            return;
         }
         
-        if(right > 0){
-            generateParenthesis(str+")", left, right-1, res);
-        }
-        if(left > 0){
-            generateParenthesis(str+"(", left-1, right+1, res);
-        }
+        // we can add an opening parenthesis as long as we haven't use all of them
+        if(open < max)
+            generateParenthesisBackTrack(cur+"(", open+1, close, max, list);
+        // we can add a closing parenthesis as long as we have enough matching opening parenthesis
+        if(close < open)
+            generateParenthesisBackTrack(cur+")", open, close+1, max, list);
     }
     
     public int longestValidParentheses(String s) {
@@ -3031,6 +3207,36 @@ public class Test {
         return max;
     }
     
+    /**
+     * A robot is located at the top-left corner of a m x n grid.
+     * The robot can only move either down or right at any point in time. 
+     * The robot is trying to reach the bottom-right corner of the grid.
+     * How many possible unique paths are there?
+     * 
+     * Soln: Since the robot can only move right and down, when it arrives at a point, it either arrives from left or above. 
+     * If we use dp[i][j] for the number of unique paths to arrive at the point (i, j), 
+     * then the state equation is dp[i][j] = dp[i][j - 1] + dp[i - 1][j]. 
+     * Moreover, we have the base cases dp[0][j] = dp[i][0] = 1 for all valid i and j.
+     * 
+     *  for (int i = 0; i < m; i++) {
+     *      for (int j = 0; j < n; j++) {
+     *          if(j > 0){
+     *              dp[i][j] = dp[i - 1][j] + dp[i][j - 1];
+     *          }
+     *      }
+     *  }
+     *  return dp[m - 1][n - 1];
+     *  
+     *  We can noticed that each time when we update dp[i][j], we only need dp[i - 1][j] (at the previous row) 
+     *  and dp[i][j - 1] (at the current row). 
+     *  
+     *  So, we update current cell by taking decision from top cell dp[i - 1][j] and left cell dp[i][j - 1]
+     *  That is, we can reduce the memory usage to just two rows (O(n)).
+     *  
+     * @param m
+     * @param n
+     * @return
+     */
     public int uniquePaths(int m, int n) {
         if(m == 1 || n == 1){
             return 1;
@@ -3050,17 +3256,40 @@ public class Test {
         return dp[n-1];
     }
     
+    public int uniquePathsWithObstaclesDp(int[][] obstacleGrid) {
+        if(obstacleGrid == null || obstacleGrid.length == 0){
+            return 0;
+        }
+        int[] dp = new int[obstacleGrid[0].length];
+        
+        dp[0] = 1;
+        for(int i = 0; i < obstacleGrid.length; i++){
+            for(int j = 0; j < obstacleGrid[0].length; j++){
+                // if obstacle then no solution through this cell
+                if(obstacleGrid[i][j] == 1){
+                    dp[j] = 0;
+                }
+                else if(j > 0){
+                    // current cell = old top cell + old left cell
+                    dp[j] = dp[j] + dp[j-1];
+                }
+            }
+        }
+        
+        return dp[obstacleGrid[0].length-1];
+    }
+    
     public int uniquePathsWithObstaclesBacktrack(int[][] obstacleGrid) {
         if(obstacleGrid == null || obstacleGrid.length == 0){
             return 0;
         }
         int[][] count = new int[obstacleGrid.length][obstacleGrid[0].length];
-        backtrack(obstacleGrid, 0, 0, count);
+        uniquePathsBacktrack(obstacleGrid, 0, 0, count);
         
         return count[obstacleGrid.length-1][obstacleGrid[0].length-1];
     }
     
-    private void backtrack(int[][] grid, int i, int j, int[][] count){
+    private void uniquePathsBacktrack(int[][] grid, int i, int j, int[][] count){
         if(count[i][j] != 0){
             count[i][j]++;
             return;
@@ -3076,31 +3305,9 @@ public class Test {
         int dirs[][] = new int[][]{{1, 0}, {0, 1}};   
         for(int[] dir : dirs){
             if((i+dir[0] < grid.length) && (j+dir[1] < grid[0].length) && (grid[i+dir[0]][j+dir[1]] == 0)){
-                backtrack(grid, i+dir[0], j+dir[1], count);
+                uniquePathsBacktrack(grid, i+dir[0], j+dir[1], count);
             }
         }
-    }
-    
-    public int uniquePathsWithObstaclesDp(int[][] obstacleGrid) {
-        if(obstacleGrid == null || obstacleGrid.length == 0){
-            return 0;
-        }
-        int[] dp = new int[obstacleGrid[0].length];
-        
-        dp[0] = 1;
-        for(int i = 0; i < obstacleGrid.length; i++){
-            for(int j = 0; j < obstacleGrid[0].length; j++){
-                if(obstacleGrid[i][j] == 1){
-                    dp[j] = 0;
-                }
-                else if(j > 0){
-                    // current cell = old top cell + old left cell
-                    dp[j] = dp[j] + dp[j-1];
-                }
-            }
-        }
-        
-        return dp[obstacleGrid[0].length-1];
     }
     
     public int lengthOfLIS(int[] nums) {
@@ -3730,10 +3937,297 @@ public class Test {
         return dummyHead.next;
     }
     
+    public int firstMissingPositive(int[] nums) {
+        if(nums.length == 0){
+            return 1;
+        }
+        
+        int p = 0;
+        int r = nums.length - 1;
+        int q = p-1;
+    
+        // if there are negatives move them at the end
+        // partition positive and negatives. Left partition is all positives
+        // and right partition is all negative or zero
+        for(int j = 0; j<=r; j++){
+            if(nums[j] > 0){
+                swap(nums, ++q, j);
+            }
+        }
+        
+        q++;
+        // now go through positive numbers and keep a map per positive number to check if exists
+        // we can reuse the array to avoid extra space
+        for(int i = 0; i < q; i++){
+            // use the number itself as the positional index in the array
+            int index = Math.abs(nums[i])-1;
+            // ideally each number should appear in the index at number - 1
+            // if anything is missing than they wouldn't match
+            // mark the numbers that are in their own position. We can negate the number as a marker. 
+            // so any position not holding their own number will not contain negative value
+            if(index<q){
+                nums[index] = -Math.abs(nums[index]);
+            }
+        }
+        
+        // first position with positive number is the desired first missing positive 
+        for(int i = 0; i < q; i++){
+            if(nums[i] > 0){
+                return i+1;
+            }
+        }
+        
+        return q+1;
+    }
+    
+    public int reverseInt(int x) {
+        int result = 0;
+
+        while (x != 0)
+        {
+            int tail = x % 10;
+            int newResult = result * 10 + tail;
+            if ((newResult - tail) / 10 != result)
+            { return 0; }
+            result = newResult;
+            x = x / 10;
+        }
+        
+        return  result;
+    }
+    
+    public int myAtoi(String str) {
+        int index = 0, sign = 1, total = 0;
+        //1. Empty string
+        if(str.length() == 0) return 0;
+
+        //2. Remove Spaces
+        while(index < str.length() && str.charAt(index) == ' ')
+            index ++;
+        if(index == str.length())
+            return 0;
+
+        //3. Handle signs
+        if(str.charAt(index) == '+' || str.charAt(index) == '-'){
+            sign = str.charAt(index) == '+' ? 1 : -1;
+            index ++;
+        }
+
+        //4. Convert number and avoid overflow
+        while(index < str.length()){
+            int digit = str.charAt(index) - '0';
+            if(digit < 0 || digit > 9) break;
+
+            //check if total will be overflow after 10 times and add digit
+            if(Integer.MAX_VALUE/10 < total || Integer.MAX_VALUE/10 == total && Integer.MAX_VALUE %10 < digit)
+                return sign == 1 ? Integer.MAX_VALUE : Integer.MIN_VALUE;
+
+            total = 10 * total + digit;
+            index ++;
+        }
+        return total * sign;
+    }
+    
+    public String longestCommonPrefix(String[] strs) {
+        if(strs == null | strs.length == 0){
+            return "";
+        }
+        // prefix tree or check each suffix manually
+        String prefix = strs[0];
+        for (int i = 1; i < strs.length; i++){
+            // prefix must start at 0
+            // if no such prefix then check the prefic of prefix
+            while(strs[i].indexOf(prefix) != 0){
+                prefix = prefix.substring(0, prefix.length()-1);
+            }
+        }
+        
+        return prefix;
+    }
+    
+    public int strStr(String s, String t) {
+        if (t.isEmpty()) return 0; // edge case: "",""=>0  "a",""=>0
+        for (int i = 0; i <= s.length() - t.length(); i++) {
+            for (int j = 0; j < t.length() && s.charAt(i + j) == t.charAt(j); j++)
+                if (j == t.length() - 1) return i;
+        }
+        return -1;
+    }
+    
+    /**
+     * Determine if a 9 x 9 Sudoku board is valid. Only the filled cells need to be validated according to the following rules:
+     * 1. Each row must contain the digits 1-9 without repetition.
+     * 2. Each column must contain the digits 1-9 without repetition.
+     * 3. Each of the nine 3 x 3 sub-boxes of the grid must contain the digits 1-9 without repetition.
+     * @param board
+     * @return
+     */
+    public boolean isValidSudoku(char[][] board) {
+        for(int i = 0; i<9; i++){
+            HashSet<Character> rows = new HashSet<Character>();
+            HashSet<Character> columns = new HashSet<Character>();
+            HashSet<Character> cube = new HashSet<Character>();
+            for (int j = 0; j < 9;j++){
+                if(board[i][j]!='.' && !rows.add(board[i][j]))
+                    return false;
+                if(board[j][i]!='.' && !columns.add(board[j][i]))
+                    return false;
+                int RowIndex = 3*(i/3);
+                int ColIndex = 3*(i%3);
+                if(board[RowIndex + j/3][ColIndex + j%3]!='.' && !cube.add(board[RowIndex + j/3][ColIndex + j%3]))
+                    return false;
+            }
+        }
+        return true;
+    }
+    
+    public String countAndSay(int n) {
+        StringBuilder curr=new StringBuilder("1");
+        StringBuilder prev;
+        int count;
+        char say;
+        for (int i=1;i<n;i++){
+            prev=curr;
+            curr=new StringBuilder();       
+            count=1;
+            say=prev.charAt(0);
+            
+            for (int j=1,len=prev.length();j<len;j++){
+                if (prev.charAt(j)!=say){
+                    curr.append(count).append(say);
+                    count=1;
+                    say=prev.charAt(j);
+                }
+                else count++;
+            }
+            curr.append(count).append(say);
+        }                   
+        return curr.toString();
+    }
+    
+    /*
+     * You are given an n x n 2D matrix representing an image, rotate the image by 90 degrees (clockwise).
+     * 
+     * Input: matrix = [[1,2,3],[4,5,6],[7,8,9]]
+     * Output: [[7,4,1],[8,5,2],[9,6,3]]
+     * 
+     *  clockwise rotate
+     * first reverse up to down, then swap the symmetry 
+     * 1 2 3     7 8 9     7 4 1
+     * 4 5 6  => 4 5 6  => 8 5 2
+     * 7 8 9     1 2 3     9 6 3
+     * 
+     * 
+     * anticlockwise rotate
+     * first reverse left to right, then swap the symmetry
+     * 1 2 3     3 2 1     3 6 9
+     * 4 5 6  => 6 5 4  => 2 5 8
+     * 7 8 9     9 8 7     1 4 7
+     */
+    public void rotateImageClockWise(int[][] matrix) {
+        int n = matrix.length;
+        // reverse the order of rows top to bottom
+        for(int row = 0; row < n/2; row++){
+            for(int col = 0; col < n; col++){
+                int temp = matrix[row][col];
+                matrix[row][col] = matrix[n-row-1][col];
+                matrix[n-row-1][col] = temp;
+            }
+        }
+        
+        // rerverse numbers in each diagonal top to bottom
+        // this is same as swpping symmetric positions
+        for(int row = 0; row < n; row++){
+            for(int col = row+1; col < n; col++){
+                int temp = matrix[row][col];
+                matrix[row][col] = matrix[col][row];
+                matrix[col][row] = temp;
+            }
+        }
+    }
+    
+    public int mySqrt(int x) {
+        if(x == 0){
+            return 0;
+        }
+        if(x <= 3){
+            return 1;
+        }
+        if(x == 4){
+            return 2;
+        }
+        
+        int l = 1, h = x/2;
+        int root = 0;
+
+        while(l < h){
+            root = l + (h-l)/2;
+            
+            if(root == x/root){
+                return root;
+            }
+            else if(root < x/root){
+                if((root+1) > x/(root+1)){
+                    return root;
+                }
+                l = root+1;
+            }
+            else if(root > x/root){
+                if((root-1) < x/(root-1)){
+                    return root-1;
+                }
+                h = root-1;
+            }
+        }
+        
+        return l;
+    }
+    
+    public int climbStairs(int n) {
+        // it's basically fibbonacy starting from 1
+        // 1, 1, 2, 3, 5, 8, ..
+        if(n <= 1){
+            return 1;
+        }
+        
+        //return climbStairs(n-1) + climbStairs(n-2);
+        // do with DP
+        int[] dp = new int[n+1];
+        dp[0] = 1;
+        dp[1] = 1;
+        for(int i = 2; i <=n; i++){
+            dp[i] = dp[i-1] + dp[i-2];
+        }
+        
+        return dp[n];
+    }
+    
+    public void sortColorsDNF(int[] a) {
+        int p1 = 0;
+        int p2 = 0;
+        int p3 = a.length-1;
+        
+        while(p2 <= p3){
+            if(a[p2] == 0){
+                swap(a, p2, p1);
+                p1++;
+                p2++;
+            }
+            else if(a[p2] == 1){
+                p2++;
+            }
+            else if(a[p2] == 2){
+                swap(a, p2, p3);
+                p3--;
+            }
+        }
+    }
     
     public static void main(String[] args) {
         
         Test t = new Test();
+        
+        String minl = t.minLenSuperSubString1("ADOBECODEBANC", "ABC");
         
         int msp = t.minPathSum(new int[][] {{1,3,1}, {1,5,1}, {4,2,1}});
         
@@ -3847,8 +4341,6 @@ public class Test {
         
         int[] res = t.searchRange(new int[] {5,7,7,8,8,10}, 8);
         System.out.println(res);
-        
-        String minl = t.minLenSuperSubString("adobecodebanc", "abc");
         
         int m[][] = new int[][] {{9, 9, 4}, {6, 6, 8}, {2, 1, 0}};
         List<Integer> ers = t.walkDFS(m);
