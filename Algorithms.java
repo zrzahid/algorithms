@@ -4277,6 +4277,48 @@ public class Test {
         return maxArea;
     }
     
+    public int maximalRectangle(int[][] matrix) {
+        /**
+        We can transform this problem into a set of Maximum Area Rectangle in a histogram sub-problems, one for each row. We will convert each of the row into a histogram such that the height of the bars is equal to the consecutive no of 1’s above it. For example,
+        
+        A =   0 1 1 0 1            |    _
+              1 0 2 1 0            |_  | |_
+              2 0 3 2 1            | | | | |_  
+                                   |_|_|_|_|_|___
+                                    2 0 3 2 1
+        */
+        
+        if(matrix.length == 0){
+            return 0;
+        }
+        
+        int maxArea = 0;
+        final int n = matrix.length;
+        final int m = matrix[0].length;
+        final int histograms[][] = new int[n][m];
+        // convert each of the row into a histogram such that the height of 
+        // the bars is equal to the consecutive no of 1's above.
+        // first intialize the top row with the input array
+        for (int j = 0; j < m; j++) {
+            histograms[0][j] = (matrix[0][j] == 1 ? 1 : 0);
+        }
+
+        // now compute the histograms.
+        for (int i = 1; i < n; i++) {
+            for (int j = 0; j < m; j++) {
+                histograms[i][j] = ((matrix[i][j] == 1) ? histograms[i - 1][j] + matrix[i][j] : 0);
+            }
+        }
+
+        // now we have total n histograms, one for each row. 
+        // Calculate the max area rectangle for each of this histogram.
+        for (int i = 0; i < n; i++) {
+            maxArea = Math.max(maxArea, largestRectangleArea(histograms[i]));
+        }
+
+        return maxArea;
+    }
+    
     public static void main(String[] args) {
         
         Test t = new Test();
