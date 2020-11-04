@@ -357,6 +357,62 @@ public class Test {
                 preorder(root.right, !reverse);
             }
         }
+        
+        /**
+         * We will basically traverse the tree in pre-order (root -> left -> right) such a way 
+         * that we assign one higher priority when we go left and one lower priority when we go right. 
+         * Then we will basically put all the nodes with same priority value in a map. 
+         * 
+         * Once the traversal is done we can print the map nodes in the order of priority, same priority 
+         * nodes in the same line. For example, the following tree shows the assigned priority for each 
+         * node in vertical traverse order [lower value means higher priority]. 
+         * 
+         *                   1,0
+         *                  /   \
+         *                2,-1    3,1
+         *              /  \      /  \
+         *            4,-2   5,0 6,0  7,2
+         *           
+         *           map :
+         *           -2 -> {4}
+         *           -1 -> {2}
+         *            0 -> {1, 5, 6}
+         *            1 -> {3}
+         *            2 -> {7}
+         * 
+         * @param root
+         */
+        public void verticalTrversal(TreeNode root){
+            int[] minmax = new int[]{Integer.MAX_VALUE, Integer.MIN_VALUE};
+            Map<Integer, ArrayList<TreeNode>> verticals = new HashMap<Integer, ArrayList<TreeNode>>();
+            traverse(root, verticals, 0, minmax);
+            for(int i = minmax[0]; i<=minmax[1]; i++){
+                if(verticals.containsKey(i)){
+                    for(TreeNode vnode : verticals.get(i)){
+                        System.out.print(vnode.val+",");
+                    }
+                    System.out.println();
+                }
+            }
+            
+        }
+
+        private void traverse(TreeNode node, Map<Integer, ArrayList<TreeNode>> verticals, int score, int[] minmax){
+            if(!verticals.containsKey(score)){
+                verticals.put(score, new ArrayList<TreeNode>());
+            }
+            
+            verticals.get(score).add(node);
+            minmax[0] = Math.min(minmax[0], score);
+            minmax[1] = Math.max(minmax[1], score);
+            
+            if(node.left != null){
+                traverse(node.left, verticals, score-1, minmax);
+            }
+            if(node.right != null){
+                traverse(node.right, verticals, score+1, minmax);
+            }
+        }
 
         public List<Integer> postorderTraversal(TreeNode root) {
             LinkedList<Integer> result = new LinkedList<>();
@@ -375,14 +431,53 @@ public class Test {
             return result;
         }
 
-        public void levelOrder(TreeNode root) {
+        public List<List<Integer>> levelOrder(TreeNode root) {
+            List<List<Integer>> res = new ArrayList<>();
+            
+            if(root == null){
+                return res;
+            }
+            List<Integer> cur = new ArrayList<>();
+            
+            Queue<TreeNode> queue = new LinkedList<>();
+            queue.offer(root);
+            int count = 1;
+            while (!queue.isEmpty()) {
+                TreeNode node = queue.poll();
+                count--;
+
+                cur.add(node.val);
+                if (node.left != null) {
+                    queue.offer(node.left);
+                }
+                if (node.right != null) {
+                    queue.offer(node.right);
+                }
+
+                if (count == 0) {
+                    res.add(cur);
+                    cur = new ArrayList<>();
+                    count = queue.size();
+                }
+            }
+            
+            return res;
+        }
+        
+        public void connectLevelOrder(TreeNode root) {
             Queue<TreeNode> queue = new LinkedList<>();
             queue.offer(root);
 
             TreeNode node = null;
             int count = 1;
             while (!queue.isEmpty()) {
-                node = queue.poll();
+                if (node == null) {
+                    node = queue.poll();
+                    node.next = null;
+                } else {
+                    node.next = queue.poll();
+                    node = node.next;
+                }
                 count--;
 
                 System.out.print(node.val + " ");
@@ -394,6 +489,7 @@ public class Test {
                 }
 
                 if (count == 0) {
+                    node = null;
                     System.out.println("");
                     count = queue.size();
                 }
@@ -544,38 +640,6 @@ public class Test {
             }
 
             return null;
-        }
-
-        public void connectLevelOrder(TreeNode root) {
-            Queue<TreeNode> queue = new LinkedList<>();
-            queue.offer(root);
-
-            TreeNode node = null;
-            int count = 1;
-            while (!queue.isEmpty()) {
-                if (node == null) {
-                    node = queue.poll();
-                    node.next = null;
-                } else {
-                    node.next = queue.poll();
-                    node = node.next;
-                }
-                count--;
-
-                System.out.print(node.val + " ");
-                if (node.left != null) {
-                    queue.offer(node.left);
-                }
-                if (node.right != null) {
-                    queue.offer(node.right);
-                }
-
-                if (count == 0) {
-                    node = null;
-                    System.out.println("");
-                    count = queue.size();
-                }
-            }
         }
 
         public void inorderMorris(TreeNode root) {
@@ -1010,6 +1074,10 @@ public class Test {
         public TreeNode buildTree(int[] preorder, int[] inorder) {
             this.preorder = preorder;
             this.inorder = inorder;
+            // Preorder traversing implies that PRE[0] is the root node.
+            // Then we can find this PRE[0] in IN, say it's IN[5].
+            // Now we know that IN[5] is root, so we know that IN[0] - IN[4] is on the left side, IN[6] to the end is on the right side.
+            // Recursively doing this on subarrays, we can build a tree out of it :)
             return buildTreeHelper(0, inorder.length - 1, 0);
         }
 
@@ -2454,6 +2522,69 @@ public class Test {
                 }
             }
         }
+        
+        public int ladderLength(String src, String dst, List<String> wordList) {
+            if (src.length() != dst.length()) {
+                return 0;
+            }
+            if (src.equals(dst)) {
+                return 1;
+
+            }
+
+            Set<String> dictionary = new HashSet<>(wordList);
+            if(!dictionary.contains(dst)){
+                return 0;
+            }
+
+            final Queue<String> q = new ArrayDeque<String>();
+            // add root to queue
+            q.add(src);
+            // use dictionary itself as un-visited set
+            dictionary.remove(src);
+            int len = 1;
+            while (!q.isEmpty()) {
+                int size = q.size();
+                // visit all nodes in the queue first for level first order
+                for(int i = 0; i < size; i++){
+                    String word = q.poll();
+                    // remove this node from unvisites set
+                    dictionary.remove(word);
+
+                    // as we are diong breadth and level first 
+                    // so first match would ne the shortest path
+                    if(word.equals(dst)){
+                        return len;
+                    }
+
+                    // if no match then visit each of the allowed transformed candidte
+                    char[] chars = word.toCharArray();
+                    for(int j = 0; j < chars.length; j++){
+                        // for each position try to trnsform each of the 26 possible characters
+                        char original = chars[j];
+                        for(char c = 'a'; c <= 'z'; c++){
+                            chars[j] = c;
+                            String intermediate = new String(chars);
+
+                            // visit BFS this intermediate word if
+                            // it contains in dictionary and yet not visited
+                            if(dictionary.contains(intermediate)){
+                                q.add(intermediate);
+                                dictionary.remove(intermediate);
+                            }
+                        }
+
+                        // put back original character on the position
+                        chars[j] = original;
+                    }
+
+                }
+
+                len++;
+            }
+
+            return 0;
+        }
 
         public boolean isNavigable(final String src, final String dst, final Set<String> dictionary) {
             if (src.length() != dst.length()) {
@@ -3841,6 +3972,22 @@ public class Test {
     }
 
     class BinarySearchTree {
+        
+        public TreeNode sortedArrayToBST(int[] nums) {
+            return sortedArrayToBSTHelper(nums, 0, nums.length-1);
+        }
+        
+        private TreeNode sortedArrayToBSTHelper(int nums[], int i, int j){
+            if(i > j){
+                return null;
+            }
+            
+            int mid = i + (j-i)/2;
+            TreeNode root = new TreeNode(nums[mid]);
+            root.left = sortedArrayToBSTHelper(nums, i, mid-1);
+            root.right = sortedArrayToBSTHelper(nums, mid+1, j);
+            return root;
+        }
 
         public boolean isValidBST1(TreeNode root) {
             if (root == null) {
@@ -4506,6 +4653,95 @@ public class Test {
 
             return false;
         }
+        
+        /**
+         * Given a binary matrix mat[n][n], find k such that all elements in k’th row are 0 and 
+         * all elements in k’th column are 1. The value of mat[k][k] can be anything (either 0 or 1). 
+         * If no such k exists, return -1.
+
+            Examples:
+            
+            Input: mat[n][n] = {{0, 1, 1, 0, 1},
+            {0, 0, 0, 0, 0},
+            {1, 1, 1, 0, 0},
+            {1, 1, 1, 1, 0},
+            {1, 1, 1, 1, 1}};
+            Output: 1
+            All elements in 1’st row are 0 and all elements in
+            1’st column are 1. mat[1][1] is 0 (can be any value)
+            
+            Input: mat[n][n] = {{0, 1, 1, 0, 1},
+            {0, 0, 0, 0, 0},
+            {1, 1, 1, 0, 0},
+            {1, 0, 1, 1, 0},
+            {1, 1, 1, 1, 1}};
+            Output: -1
+            There is no k such that k’th row elements are 0 and
+            k’th column elements are 1.            
+         * @param mat
+         * @return
+         */
+        public int findKthRowCol(int mat[][]){
+            int n = mat.length;
+            int m = mat[0].length;
+            int i = 0;
+            int j = 0;
+            
+            int candidate = -1;
+            while(i < n && j < m){
+                //check the row for all zero
+                if(mat[i][j] == 0){
+                    int k = j+1;
+                    while(k < m && mat[i][k] == 0){
+                        k++;
+                    }
+                    
+                    if(k == m){
+                        candidate = i;
+                        break;
+                    }
+                    //if not all zero in this row, then this row can't be the candidate
+                    else{
+                        i++;
+                    }
+                }
+                //check the column for all ones
+                else{
+                    int k = i+1;
+                    while(k < n && mat[k][j] == 0){
+                        k++;
+                    }
+                    
+                    if(k == n){
+                        candidate = i;
+                        break;
+                    }
+                    //if not all are 1 then this col can't be the candidate
+                    else{
+                        j++;
+                    }
+                }
+            }
+            
+            //we found a row/cold candidate, validate the rowand columnd
+            if(candidate != -1){
+                for(j = 0; j<n; j++){
+                    if(j != candidate && mat[candidate][j] != 0){
+                        return -1;
+                    }
+                }
+                
+                for(i = 0; i<n; i++){
+                    if(i != candidate && mat[i][candidate] != 1){
+                        return -1;
+                    }
+                }
+                
+                return candidate;
+            }
+            
+            return candidate;
+        }
 
         public int largestPlusInMatrix(int M[][]) {
             int n = M.length;
@@ -4749,6 +4985,23 @@ public class Test {
             return next;
 
         }
+        
+        public boolean isPalindrome(String s) {
+            if(s == null){
+                return false;
+            }
+            int i = 0, j = s.length() - 1;
+            while(i < j){
+                while(i < s.length() && !Character.isLetterOrDigit(s.charAt(i))) i++;
+                while(j >= 0 && !Character.isLetterOrDigit(s.charAt(j))) j--;
+                
+                if(i < s.length() && j >= 0 && Character.toLowerCase(s.charAt(i)) != Character.toLowerCase(s.charAt(j)))
+                    return false;
+                i++;
+                j--;
+            }
+            return true;
+        }
 
         // intuitive
         // for each index extend to both side to either get a even length palindrom with
@@ -4907,6 +5160,78 @@ public class Test {
 
             return res;
         }
+        
+        /**
+         * Given a sequence as as array of positive integers. Find the length of longest bitonic subsequence. 
+         * A bitonic subsequence is a subsequence that is first increasing up to a peak value and then 
+         * decreasing from the peak value. For example, A=[1, 11, 2, 10, 4, 5, 2, 1] the longest bitonic 
+         * sequence is 1, 2, 4, 5, 2, 1 of length 6. For A=[0, 8, 4, 12, 2, 10, 6, 14, 1, 9, 5, 13, 3, 11, 7, 15] 
+         * longest bitonic sequence is 0, 8, 12, 14, 13, 11, 7 of length 7.
+         * 
+         * 
+                          LIS     peak    LDS
+                           |       |       |
+                           |       v       |
+                           |      14       |
+                           v   12    13    v
+                             8         11
+                           0             7
+         * 
+         * LIS[i] : length of the Longest Increasing subsequence ending at arr[i]. 
+         * LDS[i]:  length of the longest Decreasing subsequence starting from arr[i].         
+         * LIS[i]+LDS[i]-1 : the length Longest Bitonic Subsequence with peak at i.
+         * 
+         * LIS(i) = max{1+LIS(j)} for all j < i and A[j] < A[i] 
+         * 
+         *     
+                                     lis(4)           
+                                 /       |      \
+                         lis(3)      lis(2)    lis(1)  
+                        /     \        /         
+                  lis(2)  lis(1)   lis(1) 
+                  /    
+                lis(1) 
+
+               So, the LIS problem has an optimal substructure LIS(i) = max{1+LIS(j)} for all j < i 
+               and the subproblems are repeating.
+
+         * 
+         * @param a
+         * @return
+         */
+        public int longestBiotonicSequence(int[] a){
+            int[] lis = new int[a.length];
+            int[] lds = new int[a.length];
+            //base cases - single number is a lis and lds
+            Arrays.fill(lis, 1);
+            Arrays.fill(lds, 1);
+            int maxBiotonicLen = Integer.MIN_VALUE;
+            
+            //longest increasing subsequence
+            //lis(i) = max{1+lis(j)}, for all j < i and a[j] < a[i]
+            for(int i = 1; i < a.length; i++){
+                for(int j = 0; j < i; j++){
+                    if(a[i] > a[j] && lis[j] + 1 > lis[i]){
+                        lis[i] = lis[j]+1;
+                    }
+                }
+            }
+            
+            //longest decreasing subsequence
+            //lds(i) = max{1+lds(j)}, for all j < i and a[j] > a[i]
+            //longest biotonic seq lbs(i) = lis(i)+lds(i)-1
+            maxBiotonicLen = lis[0]+lds[0]-1;
+            for(int i = 1; i < a.length; i++){
+                for(int j = 0; j < i; j++){
+                    if(a[i] < a[j] && lds[j] + 1 > lds[i]){
+                        lds[i] = lds[j]+1;
+                    }
+                }
+                maxBiotonicLen = Math.max(maxBiotonicLen, lis[i]+lds[i]-1);
+            }
+            
+            return maxBiotonicLen;
+        }
 
         public boolean increasingTripletSubseq(int[] a) {
             int[] lis = new int[a.length];
@@ -4926,6 +5251,63 @@ public class Test {
             }
 
             return false;
+        }
+        
+        /**
+         *     Give a list of unsorted number, find the min window or min sublist or min subarray 
+         *     of the input, such as if sublist is sorted, the whole list is sorted too.
+         *     
+         *     For example, given array a={1,2,3,5,4,4,3,3,7,8,9} then min subarray to sort the complete 
+         *     array sorted is {5,4,3,3}. 
+         *     More example : 
+         *     for a={1,2,3,5,6,4,2,3,3,7,8,9} then min subarray is {2,3,5,6,4,2,3,3}, 
+         *     for a={1,2,3,5,6,4,3,3,7,8,9,2} then min subarray is {2,3,5,6,4,2,3,3,7,8,9,2} etc.
+         * @param nums
+         * @return
+         */
+        //O(n) time algorithm
+        public List<Integer> minListToBeSorted(int[] nums){
+            //find the first index from left to right where the sorted order disrupted
+            //i.e. first index where next element is smaller 
+            int minIndex = -1;
+            for(int i = 1; i< nums.length; i++){
+                if(nums[i] < nums[i-1]){
+                    minIndex = i;
+                    break;
+                }
+            }
+            
+            //So, we got a potential mid element of the unsorted list
+            //the minimum list must have a minimum element which is smaller or equal to this element
+            for(int i = minIndex; i<nums.length; i++){
+                if(nums[i] < nums[minIndex]){
+                    minIndex = i;
+                }
+            }
+            
+            //we can use the min element to identify the left boundary of the list because the left boundary
+            //is the first element to the left greater than equal to this smallest element.
+            //at the same time we can compute the maximum element in the left of this min element
+            int l = minIndex;
+            int r = minIndex;
+            int maxLeft = nums[l];
+            while(l >= 0 && nums[l] >= nums[minIndex]){
+                maxLeft = Math.max(maxLeft, nums[l]);
+                l--;
+            }
+            
+            //we can use the max element to find the right most boundary of the min unsorted list by finding
+            //first node in right of the smallest element that is greater than the max element
+            while(r < nums.length && nums[r] <= maxLeft){
+                r++;
+            }
+            
+            //all elments between 
+            List<Integer> res = new  ArrayList<Integer>();
+            for(int i = l+1; l>=0 && r<=nums.length && i<r; i++){
+                res.add(nums[i]);
+            }
+            return res;
         }
     }
 
@@ -5523,8 +5905,8 @@ public class Test {
 
             // max sum path down (not through root) can be either on left subtree or right
             // subtree
-            int leftMaxSumPath = maxSumPathDown(root.left);
-            int rightMaxSumPath = maxSumPathDown(root.right);
+            int leftMaxSumPath =  Math.max(0, maxSumPathDown(root.left));
+            int rightMaxSumPath =  Math.max(0, maxSumPathDown(root.right));
 
             // on the way compute the sum on the path through root and update the global max
             // this is because sums from either subtree can be negative
@@ -6166,7 +6548,63 @@ public class Test {
             }
             return true;
         }
-
+        
+        class FindTwoMissing {
+            public void find2Missing(int[] a, int n){
+                for(int i = 0; i < a.length; i++){
+                    if(a[Math.abs(a[i])-1] > 0){
+                        a[Math.abs(a[i])-1]  = -a[Math.abs(a[i])-1];
+                    }
+                }
+                
+                for(int i = 0; i < a.length; i++){
+                    if(a[i] > 0){
+                        System.out.println("missing: "+i+1);
+                    }
+                    else{
+                        a[i] = -a[i];
+                    }
+                }
+            }
+            
+            //O(n) time, O(1) space
+            public void findMissing2(int a[], int n){
+                int mask = 0;
+                
+                //O(n)
+                for(int i = 1; i<=n; i++){
+                    mask ^= i;
+                }
+                
+                //O(n)
+                for(int i = 0; i < a.length; i++){
+                    mask ^= a[i];
+                }
+                
+                //get the right most set bit
+                mask &= ~(mask-1);
+                int mis1=0, mis2=0;
+                for(int i = 0; i<a.length; i++){
+                    if((a[i]&mask) == mask){
+                        mis1 ^= a[i];
+                    }
+                    else{
+                        mis2 ^= a[i];
+                    }
+                }
+                
+                for(int i = 1; i<=n; i++){
+                    if((i&mask) == mask){
+                        mis1 ^= i;
+                    }
+                    else{
+                        mis2 ^= i;
+                    }
+                }
+                
+                System.out.println("missing numbers : "+mis1+", "+mis2);
+            }
+        }
         public int firstMissingPositive(int[] nums) {
             if (nums.length == 0) {
                 return 1;
@@ -6234,6 +6672,76 @@ public class Test {
                 curr.append(count).append(say);
             }
             return curr.toString();
+        }
+        
+        /**
+         *     Given two big integers represented as strings, Multiplication them 
+         *     and return the production as string.
+         *     
+         *     For example, given a=2343324 and b=232232 then 
+         *     return c = a*b = 23433242334323342 * 23223233232434324 = 544195652122144709711313995190808
+         * @param str1
+         * @param str2
+         * @return
+         */
+        public String multiplyBigIntegers(String str1, String str2){
+            String res = new String("0");
+            
+            int count = 0;
+            for(int i = str2.length()-1; i>=0 ; i--){
+                int d2 = str2.charAt(i)-'0';
+                
+                int carry = 0;
+                StringBuffer prod = new StringBuffer();
+                for(int j = str1.length()-1; j>=0; j--){
+                    int d1 = str1.charAt(j)-'0';
+                    int p = carry+(d1*d2);
+                    prod.append(p%10);
+                    carry = p/10;
+                }
+                
+                if(carry != 0){
+                    prod.append(carry);
+                }
+                
+                prod.reverse();
+
+                for(int k = 0; k<count; k++){
+                    prod.append(0);
+                }
+                
+                res = add(res, prod.toString());
+                count++;
+            }
+            
+            return res.toString();
+        }
+
+        //O(n);
+        private String add(String str1, String str2){
+            StringBuffer res = new StringBuffer();
+            
+            int i = str1.length()-1;
+            int j = str2.length()-1;
+            int carry = 0;
+            while(true){
+                if(i < 0 && j < 0){
+                    break;
+                }
+                
+                int d1 = i < 0 ? 0 : str1.charAt(i--)-'0';
+                int d2 = j < 0 ? 0 : str2.charAt(j--)-'0';
+                int sum = d1+d2+carry;
+                
+                res.append(sum%10);
+                carry = sum/10;
+            }
+            
+            if(carry != 0){
+                res.append(carry);
+            }
+            
+            return res.reverse().toString();
         }
 
         /*
@@ -6613,6 +7121,189 @@ public class Test {
 
             return maxGap;
         }
+        
+        /**
+         *     Given a set S of digits [0-9] and a number n. Find the smallest integer larger than n (ceiling) 
+         *     using only digits from the given set S. You can use a value as many times you want.
+         *     
+         *     For example, d=[1, 2, 4, 8] and n=8753 then return 8811. 
+         *     For, d=[0, 1, 8, 3] and n=8821 then return 8830. 
+         *     For d=[0, 1, 8, 3] and n=8310 then return 8311.
+         * @param digits
+         * @param n
+         * @return
+         */
+        public int[] nextHigherWithDigits(int[] digits, int n){
+            //get the target digits sorted
+            int[] sortedDigits = Arrays.copyOf(digits, digits.length);
+            Arrays.sort(sortedDigits);
+            
+            //get the digits of the number from LSB to MSB oder
+            ArrayList<Integer> nums = new ArrayList<Integer>();
+            while(n>0){
+                nums.add(n%10);
+                n/=10;
+            }
+            
+            //reverse to get the digits in MSB to LSB order
+            Collections.reverse(nums);
+            
+            boolean higherAdded = false;
+            int[] res = new int[nums.size()];
+            int i = 0;
+            //for each digit in thr number find the next higher in the sorted target digits
+            for(int num : nums){
+                //if a higher digit was already found in previous step then rest of the digits should have the smallest digit
+                if(higherAdded){
+                    //add the smallest digit
+                    res[i++] = sortedDigits[0];
+                    continue;
+                }
+                
+                //otherwise , find the next higher (or equal) digit
+                int nextHigher = binarySearchCeiling(sortedDigits, 0, sortedDigits.length-1, num);
+                //if no such higher digit then no solution
+                if(nextHigher == -1){
+                    return null;
+                }
+                //otherwise if the digit is indeed higher then all subsequent digits should be smallest, so mark this event 
+                else if(sortedDigits[nextHigher] > num){
+                    higherAdded = true;
+                }
+                
+                //add the next higher (or equal digit)
+                res[i++] = sortedDigits[nextHigher];
+            }
+            
+            //If we didn;t find any higher digit, which is only possible when we found all equal digits
+            //then set the LSB to the next strictly higher number (not equal)
+            if(!higherAdded){
+                int nextHigher = binarySearchCeiling(sortedDigits, 0, sortedDigits.length-1, res[i-1]+1);
+                if(nextHigher == -1){
+                    return null;
+                }
+                
+                res[i-1] = sortedDigits[nextHigher];
+            }
+            
+            return res;
+        }
+        
+        public int binarySearchCeiling(int A[], int l, int h, int key){
+            int mid = (l+h)/2;
+            
+            if(A[l] >= key){
+                return l;
+            }
+            if(A[h] < key ){
+                return -1;
+            }
+            
+            if(A[mid] == key){
+                return mid;
+            }
+            //mid is greater than key, so either mid is the ceil or it exists in A[l..mid-1]
+            else if(A[mid] > key){
+                if(mid-1 >= l && A[mid-1] <= key){
+                    return mid;
+                }
+                else{
+                    return binarySearchCeiling(A, l, mid-1, key);
+                }
+            }
+            //mid is less than the key, so either mid+1 is the ceil or it exists in A[mid+1...h]
+            else{
+                if(mid + 1 <= h && A[mid+1] >= key){
+                    return mid+1;
+                }
+                else{
+                    return binarySearchCeiling(A, mid+1, h, key);
+                }
+            }
+        }
+        
+        /**
+         *  Given a string, rearrange characters of the string such that no duplicate characters are 
+         *  adjacent to each other. 
+            For example,
+            
+            Input: aaabc
+            Output: abaca
+            
+            Input: aa
+            Output: No valid output
+            
+            Input: aaaabc
+            Output: No valid output
+         * @param str
+         * @return
+         */
+        public String rearrangeAdjacentDuplicates(String str){
+            final class CharFreq implements Comparable<CharFreq>{
+                char c;
+                int freq;
+                public CharFreq(char ch, int count){
+                    c = ch;
+                    freq = count;
+                }
+                @Override
+                public int compareTo(CharFreq o) {
+                    int comp = Double.compare(freq, o.freq);
+                    if(comp == 0){
+                        comp = Character.compare(o.c, c);
+                    }
+                    
+                    return comp;
+                }
+            }
+            
+            int n = str.length();
+            StringBuffer rearranged = new StringBuffer();
+            PriorityQueue<CharFreq> maxHeap = new PriorityQueue<CharFreq>(256, Collections.reverseOrder());
+            int freqHistoGram[] = new int[256];
+            //build the character frequency histogram
+            for(char c : str.toCharArray()){
+                freqHistoGram[c]++;
+                
+                //if a character repeats more than n/2 then we can't rearrange
+                if(freqHistoGram[c] > (n+1)/2){
+                    return str;
+                }
+            }
+            //build the max heap of histogram
+            for(char i  = 0; i < 256; i++){
+                if(freqHistoGram[i] > 0)
+                    maxHeap.add(new CharFreq(i, freqHistoGram[i]));
+            }
+            
+            //rearrange - pop top 2 most frequent items and arrange them in adjacent positions
+            //decrease the histogram frequency of the selected chars 
+            while(!maxHeap.isEmpty()){
+                //extract top one and decrease the hstogram by one
+                CharFreq first = maxHeap.poll();
+                rearranged.append(first.c);
+                first.freq--;
+                
+                CharFreq second = null;
+                //extract second top and decrease the histogram by one
+                if(!maxHeap.isEmpty()){
+                    second = maxHeap.poll();
+                    rearranged.append(second.c);
+                    second.freq--;
+                }
+                
+                //add back the updated histograms 
+                if(first.freq > 0){
+                    maxHeap.add(first);
+                }
+                if(second != null && second.freq > 0){
+                    maxHeap.add(second);
+                }
+            }
+            
+            return rearranged.toString();
+        }
+
     }
 
     class Parenthesis {
@@ -6743,6 +7434,92 @@ public class Test {
             }
 
             return dp[n];
+        }
+        
+        class MinsumPathTriangle {
+            /**
+             *  Given a triangle, find the minimum path sum from top to bottom. 
+             *  Each step you may move to adjacent numbers on the row below.
+
+                For example, given the following triangle
+                
+                     [2],
+                    [3,4],
+                   [6,5,7],
+                  [4,1,8,3]
+                
+                The minimum path sum from top to bottom is 11 (i.e., 2 + 3 + 5 + 1 = 11).
+                
+                But for the following triangle –
+                
+                     [2],
+                    [5,4],
+                   [5,5,7],
+                  [1,4,8,3]
+                
+                The minimum path sum from top to bottom is 11 (i.e., 2 + 5 + 5 + 1 = 13).
+             * @param triangle
+             * @return
+             */
+            //O(n^2) time and O(n^2) space for dp table
+            public int triangleMinSumPath(List<int[]> triangle){
+                /**
+                 * At each level we need to choose the node that yields a min total sum with the following relation –
+
+                   dp[level][i] = triangle[level][i] + min{dp[next_level][i], dp[next_level][i+1]}
+                 */
+                int levels = triangle.size();
+                int dp[][] = new int[levels][levels];
+                
+                dp[levels-1] = triangle.get(levels-1);
+                
+                //bottom up Dijkstra
+                for(int l = levels-2; l>=0 ; l--){
+                    for(int i = 0; i<=l; i++){
+                        dp[l][i] = Math.min(dp[l+1][i], dp[l+1][i+1]) + triangle.get(l)[i];
+                    }
+                }
+                return dp[0][0];
+            }
+            
+            //O(n^2) time and O(n) space 
+            public int triangleMinSumPath2(List<int[]> triangle){
+                /**
+                 * If we print the dp table of the above code for example 2 then we will see the following –
+                    Triangle - 
+                    
+                         [2],
+                        [5,4],
+                       [5,5,7],
+                      [1,4,8,3]
+                    
+                    
+                    dp table  -
+                    
+                    13,  0,  0, 0 
+                    11, 13,  0, 0 
+                     6,  9, 10, 0 
+                     1,  4,  8, 3 
+                     
+                    If we look closely then we can see that the table has meaningful values in lower half 
+                    only and at each level bottom up we have one of the column value getting fixed. 
+                    So, we could have basically used the bottom level array as the dp table and at each 
+                    level we update the columns bottom up.
+
+                 */
+                int levels = triangle.size();
+                int dp[] = new int[levels];
+                
+                dp = triangle.get(levels-1);
+                
+                //bottom up Dijkstra
+                for(int l = levels-2; l>=0 ; l--){
+                    for(int i = 0; i<=l; i++){
+                        dp[i] = Math.min(dp[i], dp[i+1]) + triangle.get(l)[i];
+                    }
+                }
+                return dp[0];
+            }
         }
     }
 
@@ -7454,7 +8231,23 @@ public class Test {
             }
         }
 
+        /**
+         *     Given an unsorted array nums, reorder it in-place such that nums[0] <= nums[1] >= nums[2] <= nums[3]....
+         *     For example, given nums = [3, 5, 2, 1, 6, 4], one possible answer is [1, 6, 2, 5, 3, 4], another could be [3, 5, 1, 6, 2, 4].
+         * @param str
+         * @return
+         */
         public String rearrangeAdjacentDuplicates(String str) {
+            /*
+             * Basically, A[0] <= A[1] >= A[2] <= A[3] >= A[4] <= A[5] 
+             * Let's look into the problem closely. We can see if two consecutive elements are 
+             * in wiggle sort order i.e. A[i-1]<=A[i]>=A[i+1] then it’s neighbors are also 
+             * in wiggle order. So we could actually check by even and odd positions –
+             * 
+                    A[even] <= A[odd],
+                    A[odd] >= A[even].
+
+             */
             final class CharFreq implements Comparable<CharFreq> {
                 char c;
                 int freq;
@@ -8432,4 +9225,3 @@ public class Test {
         PermutationCombinatons pc = t.new PermutationCombinatons();
         pc.permList(input, cur, 0, result);
     }
-}
