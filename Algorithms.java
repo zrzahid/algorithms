@@ -2629,84 +2629,87 @@ public class Test {
         public List<List<String>> wordLadderAll(Set<String> dictionary, String src, String dst) {
             if (src == null || dst == null || dictionary == null || src.isEmpty() || dst.isEmpty()
                     || dictionary.isEmpty()) {
-                return Collections.EMPTY_LIST;
+                return Collections.emptyList();
             }
+            // path from a node to its parent along the BFS traversal
+            Map<String, Set<String>> shortestPathParent = new HashMap<String, Set<String>>();
+            // level or length of a word appeared in the DAG
+            Map<String, Integer> shortestPathLen = new HashMap<String, Integer>();
+            // resulting shortest paths
+            List<List<String>> shortestPaths = new ArrayList<>();
+            // visited set
+            Set<String> visited = new HashSet<>();
+            
             // Queue to traverse in BFS
             Queue<String> queue = new ArrayDeque<String>();
-            // path from a node to its parent along the BFS traversal
-            Map<String, String> parent = new HashMap<String, String>();
-            // level or length of a word appeared in the DAG
-            Map<String, Integer> pathLen = new HashMap<String, Integer>();
-            // min length path so far
-            int minLen = Integer.MAX_VALUE;
-            // resulting shortest paths
-            List<List<String>> paths = new ArrayList<>();
-            // resulting shortest path last nodes
-            Set<String> shortestPathLeaves = new HashSet<String>();
-
-            // add source to queue to start traversing
             queue.add(src);
-            pathLen.put(src, 0);
+            shortestPathLen.put(src, 0);
+
             while (!queue.isEmpty()) {
-                String intermediate = queue.poll();
-                // we already have a shortest path, so discard this longer path
-                if (pathLen.get(intermediate) >= minLen) {
-                    continue;
-                }
+                String u = queue.remove();
+                visited.add(u);
 
-                // BFS to each possible 1 edit distance neighbors in dictionary
-                for (int i = 0; i < intermediate.length(); i++) {
-                    char[] candidateChars = intermediate.toCharArray();
-                    // all possible words with current character variations
-                    for (char c = 'a'; c < 'z'; c++) {
-                        candidateChars[i] = c;
-                        String candidate = new String(candidateChars);
-
-                        if (!pathLen.containsKey(candidate)) {
-                            pathLen.put(candidate, Integer.MAX_VALUE);
-                        }
-                        // Dijktra's shortest path formullae
-                        if (pathLen.get(intermediate) + 1 > pathLen.get(candidate)) {
-                            continue;
+                // traverse all the edges
+                for (String e : getLadderEdges(u, dictionary)) {
+                    if (e != null) {
+                        // Dijkstra's inequality - select this path if it is shorter
+                        // notice the <= instead of < because we want all the paths with min length, not any one path
+                        if (!shortestPathLen.containsKey(e) || (shortestPathLen.get(u) + 1) <= shortestPathLen.get(e)) {
+                            shortestPathLen.put(e, shortestPathLen.get(u) + 1);
+                            // update parent
+                            Set<String> p = shortestPathParent.getOrDefault(e, new HashSet<>());
+                            p.add(u);
+                            shortestPathParent.put(e, p);
                         }
 
-                        // if we reach a solution, add it to solution
-                        if (candidate.equals(dst)) {
-                            shortestPathLeaves.add(intermediate);
-                            minLen = Math.min(minLen, pathLen.get(intermediate) + 1);
-                        }
-                        // otherwise if this intermediate word is present in dictionary then
-                        // add it as children and update the path len
-                        else if (dictionary.contains(candidate)) {
-                            parent.put(candidate, intermediate);
-                            pathLen.put(candidate, pathLen.get(intermediate) + 1);
-                            queue.add(candidate);
+                        // if not visited already then push to queue for visiting
+                        if (!visited.contains(e)) {
+                            queue.add(e);
                         }
                     }
                 }
             }
-
-            // Add all paths to result set
-            for (String path : shortestPathLeaves) {
-                paths.add(getPath(parent, path, src, dst));
+            
+            // run a DFS on the parent DAG from dest to source (reverse)
+            getPathsDFS(dst, src, new LinkedList<>(), shortestPathParent, shortestPaths);
+            
+            return shortestPaths;
+        }
+        
+        // send all the edges (all character mutations for all positions)
+        private List<String> getLadderEdges(String word, Set<String> dictionary) {
+            List<String> edges = new ArrayList<>();
+            
+            for (int i = 0; i < word.length(); i++) {
+                char[] candidateChars = word.toCharArray();
+                // all possible words with current character variations
+                for (char c = 'a'; c < 'z'; c++) {
+                    candidateChars[i] = c;
+                    String candidate = new String(candidateChars);
+                    
+                    if (dictionary.contains(candidate)) {
+                        edges.add(candidate);
+                    }
+                }
             }
-
-            return paths;
+            
+            return edges;
         }
 
-        private List<String> getPath(Map<String, String> parentMap, String leaf, String src, String dst) {
-            List<String> path = new ArrayList<String>();
-
-            String node = leaf;
-            path.add(dst);
-            path.add(0, leaf);
-            while (parentMap.get(node) != null && parentMap.get(node) != src) {
-                node = parentMap.get(node);
-                path.add(0, node);
+        private void getPathsDFS(String src, String dst, LinkedList<String> cur, Map<String, Set<String>> parents, List<List<String>> res) {
+            // as we are going from dest so add in front (reverse)
+            cur.addFirst(src);
+            if(src.equals(dst)) {
+                res.add(new ArrayList<>(cur));
             }
-            path.add(0, src);
-
-            return path;
+            else {
+                // visit all parents
+                for(String p : parents.getOrDefault(src, new HashSet<>())) {
+                    getPathsDFS(p, dst, cur, parents, res);
+                }
+            }
+            // backtrack 
+            cur.remove();
         }
     }
 
@@ -9080,6 +9083,11 @@ public class Test {
         Test t = new Test();
         Sorting st = t.new Sorting();
         st.merge(new int[] { 1, 2, 3, 0, 0, 0 }, 3, new int[] { 2, 5, 6 }, 3);
+        
+        WalkBFS w = t.new WalkBFS();
+        //w.wordLadderAll(new HashSet<>(Arrays.asList(new String[] {"ted","tex","red","tax","tad","den","rex","pee"})), "red", "tax");
+        //w.wordLadderAll(new HashSet<>(Arrays.asList(new String[] {"hot","dot","dog","lot","log","cog"})), "hit", "cog");
+        w.wordLadderAll(new HashSet<>(Arrays.asList(new String[] {"hot","dog"})), "hot", "dog");
 
         // String minl = t.minLenSuperSubString1("ADOBECODEBANC", "ABC");
 
