@@ -28,8 +28,6 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.sun.corba.se.impl.protocol.MinimalServantCacheLocalCRDImpl;
-
 import test.Test.Graph.Edge;
 import test.Test.IntervalOps.PartitionLabels;
 
@@ -1472,6 +1470,37 @@ public class Test {
                 }
             }
         }
+ 
+        public TreeNode sortedListToBST(ListNode head) {
+            return sortedListToBSTHelper(head);
+        }
+        
+        public TreeNode sortedListToBSTHelper(ListNode head) {
+            if (head == null)
+                return null;
+            if (head.next == null){
+                return new TreeNode(head.val);
+            }
+
+            // cut the list in middle
+            ListNode prev = null, slow = head, fast = head;
+
+            while (fast != null && fast.next != null) {
+                prev = slow;
+                slow = slow.next;
+                fast = fast.next.next;
+            }
+
+            prev.next = null;
+            
+            // slow is the root 
+            TreeNode root = new TreeNode(slow.val);
+            // recursively compute left ans right subtree
+            root.left = sortedListToBSTHelper(head);
+            root.right = sortedListToBSTHelper(slow.next);
+
+            return root;
+        }
 
         public TreeNode convertList2BTreeRecursive(ListNode head) {
             int n = 0;
@@ -1810,18 +1839,18 @@ public class Test {
         }
 
         public ListNode reverseList(ListNode head) {
-            ListNode reversed = null;
+            ListNode newHead = null;
             ListNode cur = head;
             ListNode temp = null;
 
             while (cur != null) {
                 temp = cur;
                 cur = cur.next;
-                temp.next = reversed;
-                reversed = temp;
+                temp.next = newHead;
+                newHead = temp;
             }
 
-            return reversed;
+            return newHead;
         }
 
         public ListNode reverse(ListNode head, ListNode reversed) {
@@ -1834,6 +1863,46 @@ public class Test {
             current.next = reversed;
 
             return reverse(head, current);
+        }
+        
+        public ListNode reverseBetween(ListNode head, int m, int n) {
+            ListNode dummyHead = new ListNode(-1);
+            dummyHead.next = head;
+            ListNode tail = head;
+            ListNode left = dummyHead;
+            
+            // set two pointers - left and right
+            // left points to the prev node of the mth node (head)
+            // right points to the next node node if of the nth node (tail)
+            // both can be null
+            int i = 1;
+            while(i < n && tail != null){
+                tail = tail.next;
+                if(i < m){
+                    left = head;
+                    head = head.next;
+                }
+                i++;
+            }
+
+            // now reverse between the head and tail
+            ListNode right = tail == null ? null : tail.next;
+            // cut of the tail as tail is now pointed by right
+            tail.next = null;
+            // reverse between head and tail
+            // rerversed list should point to the tail
+            // so use the right pointer as the new revesed head
+            while(head != null){
+                ListNode cur = head;
+                head = head.next;
+                cur.next = right;
+                right = cur;
+            }
+            
+            // connect the left list with the right list
+            left.next = right;
+            
+            return dummyHead.next;
         }
 
         public ListNode reverseK(ListNode head, ListNode tail, ListNode reversed, int k, int count) {
@@ -2073,6 +2142,7 @@ public class Test {
                 int count = 0;
                 prev = slow;
                 slow = slow.next;
+                // for every one move of slow we move fast n times
                 while (count < n && fast != null) {
                     fast = fast.next;
                     count++;
@@ -2088,6 +2158,54 @@ public class Test {
             }
 
             return slow;
+        }
+        
+        /**
+         * Given a (singly) linked list with head node root, write a function to split the linked list 
+         * into k consecutive linked list "parts". 
+         * 
+         * The length of each part should be as equal as possible: no two parts should have a size 
+         * differing by more than 1. This may lead to some parts being null.
+         * Input: root = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], k = 3
+         * Output: [[1, 2, 3, 4], [5, 6, 7], [8, 9, 10]]
+         * 
+         * Input: root = [1, 2, 3], k = 5
+         * Output: [[1],[2],[3],[],[]]
+         * 
+         * @param root
+         * @param k
+         * @return
+         */
+        public ListNode[] splitListToParts(ListNode root, int k) {
+            ListNode[] buckets = new ListNode[k];
+            
+            ListNode head = root;
+            int n = 0;
+            while(head != null) {
+                head = head.next;
+                n++;
+            }
+            
+            if(n == 0){
+                return buckets;
+            }
+            
+            int bucketSize = n/k;
+            int bucketsWithExtraOne = n%k;
+            
+            ListNode cur = root, prev = null;
+            for(int i = 0; i < k; i++){
+                buckets[i] = cur;
+                // now move head to next bucket head
+                int fillSize = bucketSize+ (bucketsWithExtraOne-- > 0 ? 1 : 0);
+                for(int j = 0; cur != null && j < fillSize; j++){
+                    prev = cur;
+                    cur = cur.next;
+                }
+                prev.next = null;
+            }
+            
+            return buckets;
         }
 
         class SolutionMergeKListWithPQ {
@@ -9537,6 +9655,19 @@ public class Test {
         Test t = new Test();
         Sorting st = t.new Sorting();
         st.merge(new int[] { 1, 2, 3, 0, 0, 0 }, 3, new int[] { 2, 5, 6 }, 3);
+        
+        LinkedListOps liops = t.new LinkedListOps();
+        ListNode mydum = t.new ListNode(0);
+        ListNode myhead = t.new ListNode(1);
+        mydum.next = myhead;
+        myhead.next = t.new ListNode(2);
+        myhead = myhead.next;
+        myhead.next = t.new ListNode(3);
+        myhead = myhead.next;
+        myhead.next = t.new ListNode(4);
+        myhead = myhead.next;
+        myhead.next = t.new ListNode(5);
+        liops.reverseBetween(mydum.next, 2, 4);
         
         DP dp = t.new DP();
         dp.canJump(new int[] {5,9,3,2,1,0,2,3,3,1,0,0});
