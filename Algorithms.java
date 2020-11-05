@@ -3452,40 +3452,29 @@ public class Test {
             }
             
             public boolean wordBreakDP(Set<String> dictionary, String text) {
-                if (dictionary.isEmpty()) 
-                    return false;
-                
                 int n = text.length();
-                if (n == 0) {
+                if(n == 0){
                     return true;
                 }
-
-                // dp[i] = true if there is a solution in prefix text[0..i]
-                boolean[] dp = new boolean[n];
-
-                // try all possible prefixes
-                for (int i = 0; i < n; i++) {
-                    // check from dp if current length prefix is not a solution yet
-                    // if the prefix present in dictionary then update the dp
-                    if (dp[i] == false && dictionary.contains(text.substring(0, i + 1))) {
-                        dp[i] = true;
-                    }
-
-                    // if this prefix contains in dictionary the try to extend the prefix up to end
-                    // of the string
-                    if (dp[i] == true) {
-                        for (int j = i + 1; j < n; j++) {
-                            // check id dp[j] already computed to a solution ,
-                            // other wise we need to check if text[i+1..i] contains in the dict.
-                            // so that we can create a longer prefix text[0..j]
-                            if (dp[j] == false) {
-                                dp[j] = dictionary.contains(text.substring(i + 1, j + 1));
-                            }
+                
+                //dp[i] = true if there is a solution in prefix text[0..i]
+                boolean[] dp = new boolean[n+1];  
+                dp[0] = true;// base case empty string can always be brekable 
+                
+                //try all possible prefixes
+                for(int i = 1; i<= n; i++){
+                    // break into prefix and suffix
+                    // for s[0..i] prefixs we break into s[0..j] prefix and s[j..i] suffix 
+                    for(int j = 0; j < i; j++){
+                        // check if prefix has solution (subproblem) and suffix is in dictionary
+                        if(dp[j] && dictionary.contains(text.substring(j, i))){
+                            dp[i] = true;
+                            break;
                         }
                     }
                 }
-
-                return dp[n - 1];
+                
+                return dp[n];
             }
 
             /**
@@ -3536,6 +3525,34 @@ public class Test {
                 return result;
             }
             
+            public int wordBreakCountAll(Set<String> dictionary, String text, Map<String, Integer> dpMap) {
+                // if already computed the current substring text then return from map
+                if (dpMap.containsKey(text)) {
+                    return dpMap.get(text);
+                }
+                int count = 0;
+
+                // if the whole word is in the dictionary then we add this to final result
+                if (dictionary.contains(text)) {
+                    count++;
+                }
+
+                // try each prefix and extend
+                for (int i = 0; i < text.length(); i++) {
+                    // take a prefix and recursively chck if the remaining (suffix) can be broken
+                    String prefix = text.substring(0, i + 1);
+                    if (dictionary.contains(prefix)) {
+                        // extend
+                        String suffix = text.substring(i + 1);
+                        count += wordBreakCountAll(dictionary, suffix, dpMap);
+                    }
+                }
+
+                // cache the result for later use
+                dpMap.put(text, count);
+                return count;
+            }
+            
             /**
              * Given a list of words (without duplicates), please write a program that returns 
              * all concatenated words in the given list of words.
@@ -3571,6 +3588,31 @@ public class Test {
                 }
                 
                 return res;
+            }
+            
+            /**
+             * A message containing letters from A-Z is being encoded to numbers using the following mapping:
+
+                    'A' -> 1
+                    'B' -> 2
+                    ...
+                    'Z' -> 26
+
+               Given a non-empty string containing only digits, determine the total number of ways to decode it.
+               Input: s = "12"
+                Output: 2
+                Explanation: It could be decoded as "AB" (1 2) or "L" (12).
+                
+             * @param s
+             * @return
+             */
+            public int numDecodings(String s) {
+                Set<String> dictionary = new HashSet<>();
+                for(int n = 1; n <= 26; n++){
+                    dictionary.add(n+"");
+                }
+                
+                return wordBreakCountAll(dictionary, s, new HashMap<>());
             }
         }
 
@@ -5289,7 +5331,41 @@ public class Test {
         }
     }
 
+    
     class Subsequences {
+        /**
+         * Given an unsorted array of integers nums, return the length of the longest consecutive elements sequence.
+         * Input: nums = [100,4,200,1,3,2]
+         * Output: 4
+         * Explanation: The longest consecutive elements sequence is [1, 2, 3, 4]. Therefore its length is 4.
+         * @param nums
+         * @return
+         */
+        public int longestConsecutiveSequence(int[] nums) {
+            if(nums.length == 0){
+                return 0;
+            }
+            Arrays.sort(nums);
+            
+            int maxLen = 1, len = 1;
+            for(int i = 1; i < nums.length; i++){
+                // if same number is repeating we need only one to count
+                if(nums[i] == nums[i-1]){
+                    continue;
+                }
+                // increanse the subseq only if consecutive
+                if(nums[i] == nums[i-1]+1){
+                    maxLen = Math.max(maxLen, ++len);
+                }
+                // otherwise start a new sequence
+                else{
+                    len = 1;
+                }
+            }
+            
+            return maxLen;
+        }
+        
         public int lengthOfLIS(int[] nums) {
             if (nums == null || nums.length == 0) {
                 return 0;
@@ -7626,6 +7702,67 @@ public class Test {
             return dp[n];
         }
         
+        public boolean canJump(int[] nums) {
+            int n = nums.length;
+            boolean dp[] = new boolean[n];
+            dp[n-1] = true;
+            
+            for(int i = n-2; i>=0; i--){
+                int j = i+1;
+                int k = Math.min(j+nums[i], n);
+                while(j < k){
+                    if(dp[j++]){
+                        dp[i] = true;
+                        break;
+                    }
+                }
+            }
+            
+            return dp[0];
+        }
+        
+        /**
+         * Given an array of non-negative integers nums, you are initially positioned at the first index of the array.
+         * Each element in the array represents your maximum jump length at that position.
+         * Your goal is to reach the last index in the minimum number of jumps.
+         * 
+         * Input: nums = [2,3,1,1,4]
+         * Output: 2
+         * Explanation: The minimum number of jumps to reach the last index is 2. 
+         * Jump 1 step from index 0 to 1, then 3 steps to the last index.
+         * 
+         * Input: nums = [2,3,0,1,4]
+         * Output: 2
+         * 
+         * @param nums
+         * @return
+         */
+        public int minNumberOfJumps(int[] nums) {
+            int n = nums.length;
+            long dp[] = new long[n];
+            Arrays.fill(dp, Integer.MAX_VALUE);
+            dp[n-1] = 0;
+
+            for(int i = n-2; i>=0; i--){
+                int j = i+1;
+                int k = Math.min(j+nums[i], n);
+                while(j < k){
+                    // if
+                    if(j != n-1 && nums[j] == 0){
+                        j++;
+                        continue;
+                    }
+                    // we can reach j from i by one jump
+                    if((dp[j]+1) < dp[i]){
+                        dp[i] = dp[j]+1;
+                    }
+                    j++;
+                }
+            }
+
+            return (int) dp[0];
+        }
+        
         class MinsumPathTriangle {
             /**
              *  Given a triangle, find the minimum path sum from top to bottom. 
@@ -9214,22 +9351,34 @@ public class Test {
     }
 
     class StockOptimization {
-        public int maxStockProfit(int[] price) {
+        /**
+         * Say you have an array for which the ith element is the price of a given stock on day i.
+         * If you were only permitted to complete at most one transaction 
+         * (i.e., buy one and sell one share of the stock), design an algorithm to find the maximum profit.
+         * Note that you cannot sell a stock before you buy one.
+         * 
+         * Input: [7,1,5,3,6,4]
+            Output: 5
+            Explanation: Buy on day 2 (price = 1) and sell on day 5 (price = 6), profit = 6-1 = 5.
+            Not 7-1 = 6, as selling price needs to be larger than buying price.
+
+
+         * @param price
+         * @return
+         */
+        public int maxProfit(int[] price) {
+            if(price.length == 0){
+                return 0;
+            }
             int maxProfit = 0;
-            int minBuy = price[0];
-            int tempStart = 0;
-            int start = 0;
-            int end = 0;
+            int minBuy = 0;
 
             for (int i = 0; i < price.length; i++) {
-                if (price[i] < minBuy) {
-                    minBuy = price[i];
-                    tempStart = i;
+                if (price[i] < price[minBuy]) {
+                    minBuy = i;
                 }
-                if ((price[i] - minBuy) > maxProfit) {
-                    maxProfit = price[i] - minBuy;
-                    start = tempStart;
-                    end = i;
+                if ((price[i] - price[minBuy]) > maxProfit) {
+                    maxProfit = price[i] - price[minBuy];
                 }
             }
 
@@ -9270,6 +9419,9 @@ public class Test {
         Test t = new Test();
         Sorting st = t.new Sorting();
         st.merge(new int[] { 1, 2, 3, 0, 0, 0 }, 3, new int[] { 2, 5, 6 }, 3);
+        
+        DP dp = t.new DP();
+        dp.canJump(new int[] {5,9,3,2,1,0,2,3,3,1,0,0});
         
         WalkBFS w = t.new WalkBFS();
         //w.wordLadderAll(new HashSet<>(Arrays.asList(new String[] {"ted","tex","red","tax","tad","den","rex","pee"})), "red", "tax");
