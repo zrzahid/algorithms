@@ -28,6 +28,8 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.sun.corba.se.impl.protocol.MinimalServantCacheLocalCRDImpl;
+
 import test.Test.Graph.Edge;
 import test.Test.IntervalOps.PartitionLabels;
 
@@ -2523,6 +2525,46 @@ public class Test {
             }
         }
         
+        public boolean isNavigable(final String src, final String dst, final Set<String> dictionary) {
+            if (src.length() != dst.length()) {
+                return false;
+            }
+            if (src.equals(dst)) {
+                return true;
+
+            }
+            dictionary.remove(src);
+
+            final Queue<String> q = new ArrayDeque<String>();
+            q.add(src);
+
+            while (!q.isEmpty()) {
+                final String intermediate = q.poll();
+
+                for (int i = 0; i < intermediate.length(); i++) {
+                    char[] candidateChars = intermediate.toCharArray();
+                    for (char j = 'a'; j < 'z'; j++) {
+                        candidateChars[i] = j;
+
+                        final String candidate = new String(candidateChars);
+
+                        if (candidate.equals(dst)) {
+                            System.out.print("-->" + candidate);
+                            return true;
+                        } else if (dictionary.contains(candidate)) {
+                            dictionary.remove(candidate);
+                            q.add(candidate);
+                            System.out.print("-->" + candidate);
+                        }
+                    }
+                }
+
+                System.out.println();
+            }
+
+            return false;
+        }
+        
         public int ladderLength(String src, String dst, List<String> wordList) {
             if (src.length() != dst.length()) {
                 return 0;
@@ -2585,47 +2627,151 @@ public class Test {
 
             return 0;
         }
-
-        public boolean isNavigable(final String src, final String dst, final Set<String> dictionary) {
+        
+        // using Dijkstra
+        public int ladderLength2(String src, String dst, List<String> wordList) {
             if (src.length() != dst.length()) {
-                return false;
+                return 0;
             }
             if (src.equals(dst)) {
-                return true;
+                return 1;
 
+            }
+
+            Set<String> dictionary = new HashSet<>(wordList);
+            if(!dictionary.contains(dst)){
+                return 0;
             }
             dictionary.remove(src);
 
+            Set<String> visited = new HashSet<>();
+            Map<String, Integer> shortestPathLens = new HashMap<>();
             final Queue<String> q = new ArrayDeque<String>();
+            // add root to queue
             q.add(src);
-
+            shortestPathLens.put(src, 0);
+            
+            int minLen = Integer.MAX_VALUE;
             while (!q.isEmpty()) {
-                final String intermediate = q.poll();
-
-                for (int i = 0; i < intermediate.length(); i++) {
-                    char[] candidateChars = intermediate.toCharArray();
-                    for (char j = 'a'; j < 'z'; j++) {
-                        candidateChars[i] = j;
-
-                        final String candidate = new String(candidateChars);
-
-                        if (candidate.equals(dst)) {
-                            System.out.print("-->" + candidate);
-                            return true;
-                        } else if (dictionary.contains(candidate)) {
-                            dictionary.remove(candidate);
-                            q.add(candidate);
-                            System.out.print("-->" + candidate);
-                        }
+                String u = q.remove();
+                visited.add(u);
+                
+                // visit all the edges
+                for(String e : getLadderEdges(u, dictionary, visited)) {
+                    if(visited.contains(e)) {
+                        continue;
+                    }
+                    // Dijkstra's inequality - select this path if it is shorter
+                    // notice the <= instead of < because we want all the paths with min length, not any one path
+                    if(!shortestPathLens.containsKey(e) || (shortestPathLens.get(u)+1 <= shortestPathLens.get(e))) {
+                        shortestPathLens.put(e, shortestPathLens.get(u)+1);
+                    }
+                    
+                    // if the destination can be reached update the minLen
+                    if(e.equals(dst)) {
+                        minLen = Math.min(minLen, 1+shortestPathLens.get(dst));
+                    }
+                    
+                    // visit the node if not visited yet
+                    if(!visited.contains(e)) {
+                        q.add(e);
                     }
                 }
-
-                System.out.println();
             }
 
-            return false;
+            return minLen;
         }
+        
+        // send all the edges (all character mutations for all positions)
+        private Set<String> getLadderEdges(String word, Set<String> dictionary, Set<String> visited) {
+            Set<String> edges = new HashSet<>();
+            
+            for (int i = 0; i < word.length(); i++) {
+                char[] candidateChars = word.toCharArray();
+                // all possible words with current character variations
+                for (char c = 'a'; c <= 'z'; c++) {
+                    candidateChars[i] = c;
+                    String candidate = new String(candidateChars);
+                    
+                    if (dictionary.contains(candidate) && !visited.contains(candidate)) {
+                        edges.add(candidate);
+                    }
+                }
+            }
+            
+            return edges;
+        }
+        
+        /**
+         * A gene string can be represented by an 8-character long string, with choices from "A", "C", "G", "T".
+         * Suppose we need to investigate about a mutation (mutation from "start" to "end"), where ONE mutation is 
+         * defined as ONE single character changed in the gene string.
+         * For example, "AACCGGTT" -> "AACCGGTA" is 1 mutation.
+         * Also, there is a given gene "bank", which records all the valid gene mutations. 
+         * A gene must be in the bank to make it a valid gene string.
+         * 
+         * Now, given 3 things - start, end, bank, your task is to determine what is the minimum number of 
+         * mutations needed to mutate from "start" to "end". If there is no such a mutation, return -1.
+         * 
+         * @param src
+         * @param dst
+         * @param bank
+         * @return
+         */
+        public int minMutation(String src, String dst, String[] bank) {
+            if (src.length() != dst.length() || bank.length == 0) {
+                return -1;
+            }
+            if (src.equals(dst)) {
+                return 0;
 
+            }
+
+            Set<String> dictionary = new HashSet<>(Arrays.asList(bank));
+            if(!dictionary.contains(dst)){
+                return -1;
+            }
+            dictionary.remove(src);
+
+            Set<String> visited = new HashSet<>();
+            Map<String, Integer> shortestPathLens = new HashMap<>();
+            final Queue<String> q = new ArrayDeque<String>();
+            // add root to queue
+            q.add(src);
+            shortestPathLens.put(src, -1);
+
+            int minLen = Integer.MAX_VALUE;
+            while (!q.isEmpty()) {
+                String u = q.remove();
+                visited.add(u);
+
+                // visit all the edges
+                for(String e : getLadderEdges(u, dictionary, visited)) {
+                    if(visited.contains(e)) {
+                        continue;
+                    }
+                    // Dijkstra's inequality - select this path if it is shorter
+                    // notice the <= instead of < because we want all the paths with min length, not any one path
+                    if(!shortestPathLens.containsKey(e) || (shortestPathLens.get(u)+1 <= shortestPathLens.get(e))) {
+                        shortestPathLens.put(e, shortestPathLens.get(u)+1);
+                    }
+
+                    // if the destination can be reached update the minLen
+                    if(e.equals(dst)) {
+                        minLen = Math.min(minLen, 1+shortestPathLens.get(dst));
+                        return minLen;
+                    }
+
+                    // visit the node if not visited yet
+                    if(!visited.contains(e)) {
+                        q.add(e);
+                    }
+                }
+            }
+
+            return minLen == Integer.MAX_VALUE? -1 : minLen;
+        }
+        
         public List<List<String>> wordLadderAll(Set<String> dictionary, String src, String dst) {
             if (src == null || dst == null || dictionary == null || src.isEmpty() || dst.isEmpty()
                     || dictionary.isEmpty()) {
@@ -2650,8 +2796,11 @@ public class Test {
                 visited.add(u);
 
                 // traverse all the edges
-                for (String e : getLadderEdges(u, dictionary)) {
+                for (String e : getLadderEdges(u, dictionary, visited)) {
                     if (e != null) {
+                        if(visited.contains(e)) {
+                            continue;
+                        }
                         // Dijkstra's inequality - select this path if it is shorter
                         // notice the <= instead of < because we want all the paths with min length, not any one path
                         if (!shortestPathLen.containsKey(e) || (shortestPathLen.get(u) + 1) <= shortestPathLen.get(e)) {
@@ -2660,6 +2809,7 @@ public class Test {
                             Set<String> p = shortestPathParent.getOrDefault(e, new HashSet<>());
                             p.add(u);
                             shortestPathParent.put(e, p);
+                            continue;
                         }
 
                         // if not visited already then push to queue for visiting
@@ -2676,26 +2826,6 @@ public class Test {
             return shortestPaths;
         }
         
-        // send all the edges (all character mutations for all positions)
-        private List<String> getLadderEdges(String word, Set<String> dictionary) {
-            List<String> edges = new ArrayList<>();
-            
-            for (int i = 0; i < word.length(); i++) {
-                char[] candidateChars = word.toCharArray();
-                // all possible words with current character variations
-                for (char c = 'a'; c < 'z'; c++) {
-                    candidateChars[i] = c;
-                    String candidate = new String(candidateChars);
-                    
-                    if (dictionary.contains(candidate)) {
-                        edges.add(candidate);
-                    }
-                }
-            }
-            
-            return edges;
-        }
-
         private void getPathsDFS(String src, String dst, LinkedList<String> cur, Map<String, Set<String>> parents, List<List<String>> res) {
             // as we are going from dest so add in front (reverse)
             cur.addFirst(src);
@@ -3320,39 +3450,11 @@ public class Test {
 
                 return false;
             }
-
-            public HashMap<String, ArrayList<String>> wordBreakMap = new HashMap<String, ArrayList<String>>();
-
-            public ArrayList<String> wordBreakAll(Set<String> dictionary, String text) {
-                // if already computed the current substring text then return from map
-                if (wordBreakMap.containsKey(text)) {
-                    return wordBreakMap.get(text);
-                }
-                ArrayList<String> result = new ArrayList<String>();
-
-                // if the whole word is in the dictionary then we add this to final result
-                if (dictionary.contains(text)) {
-                    result.add(text);
-                }
-
-                // try each prefix and extend
-                for (int i = 0; i < text.length(); i++) {
-                    String prefix = text.substring(0, i + 1);
-                    if (dictionary.contains(prefix)) {
-                        // extend
-                        String suffix = text.substring(i + 1);
-                        ArrayList<String> subRes = wordBreakAll(dictionary, suffix);
-                        for (String word : subRes) {
-                            result.add(prefix + " " + word);
-                        }
-                    }
-                }
-
-                wordBreakMap.put(text, result);
-                return result;
-            }
-
+            
             public boolean wordBreakDP(Set<String> dictionary, String text) {
+                if (dictionary.isEmpty()) 
+                    return false;
+                
                 int n = text.length();
                 if (n == 0) {
                     return true;
@@ -3363,8 +3465,8 @@ public class Test {
 
                 // try all possible prefixes
                 for (int i = 0; i < n; i++) {
-                    // check from dp if current length prefix is a solution
-                    // if not then the prefix should be present in dictionary
+                    // check from dp if current length prefix is not a solution yet
+                    // if the prefix present in dictionary then update the dp
                     if (dp[i] == false && dictionary.contains(text.substring(0, i + 1))) {
                         dp[i] = true;
                     }
@@ -3384,6 +3486,91 @@ public class Test {
                 }
 
                 return dp[n - 1];
+            }
+
+            /**
+             *  Input:
+                s = "catsanddog"
+                wordDict = ["cat", "cats", "and", "sand", "dog"]
+                Output:
+                [
+                  "cats and dog",
+                  "cat sand dog"
+                ]
+
+             * @param dictionary
+             * @param text
+             * @param dpMap
+             * @return
+             */
+            public List<String> wordBreakAll(Set<String> dictionary, String text, Map<String, List<String>> dpMap) {
+                // if already computed the current substring text then return from map
+                if (dpMap.containsKey(text)) {
+                    return dpMap.get(text);
+                }
+                List<String> result = new ArrayList<String>();
+
+                // if the whole word is in the dictionary then we add this to final result
+                if (dictionary.contains(text)) {
+                    result.add(text);
+                }
+
+                // try each prefix and extend
+                for (int i = 0; i < text.length(); i++) {
+                    // take a prefix and recursively chck if the remaining (suffix) can be broken
+                    String prefix = text.substring(0, i + 1);
+                    if (dictionary.contains(prefix)) {
+                        // extend
+                        String suffix = text.substring(i + 1);
+                        List<String> subRes = wordBreakAll(dictionary, suffix, dpMap);
+                        // for each result list from the suffix make the final answer by
+                        // appending prefix to the front of each answer
+                        for (String word : subRes) {
+                            result.add(prefix + " " + word);
+                        }
+                    }
+                }
+
+                // cache the result for later use
+                dpMap.put(text, result);
+                return result;
+            }
+            
+            /**
+             * Given a list of words (without duplicates), please write a program that returns 
+             * all concatenated words in the given list of words.
+             * 
+             * A concatenated word is defined as a string that is comprised entirely of at least 
+             * two shorter words in the given array.
+             * 
+             * Input: 
+             * ["cat","cats","catsdogcats","dog","dogcatsdog","hippopotamuses","rat","ratcatdogcat"]
+             * Output: ["catsdogcats","dogcatsdog","ratcatdogcat"]
+
+             * @param words
+             * @return
+             */
+            public List<String> findAllConcatenatedWordsInADict(String[] words) {
+                if(words.length == 0){
+                    return Collections.emptyList();
+                }
+                
+                Set<String> dictionary = new HashSet<>(Arrays.asList(words));
+                List<String> res = new ArrayList<>();
+                // instead of concatenate, for each word test if they are breakable 
+                // remove the world itself from the dictionary so that the solution is comprised 
+                // entirely of at least two shorter words in the given array.
+                for(String w : words){
+                    if(!w.isEmpty()){
+                        dictionary.remove(w);
+                        if(wordBreakDP(dictionary, w)){
+                            res.add(w);
+                        }
+                        dictionary.add(w);
+                    }
+                }
+                
+                return res;
             }
         }
 
@@ -9086,8 +9273,8 @@ public class Test {
         
         WalkBFS w = t.new WalkBFS();
         //w.wordLadderAll(new HashSet<>(Arrays.asList(new String[] {"ted","tex","red","tax","tad","den","rex","pee"})), "red", "tax");
-        //w.wordLadderAll(new HashSet<>(Arrays.asList(new String[] {"hot","dot","dog","lot","log","cog"})), "hit", "cog");
-        w.wordLadderAll(new HashSet<>(Arrays.asList(new String[] {"hot","dog"})), "hot", "dog");
+        //w.ladderLength2("ymain", "oecij", Arrays.asList(new String[] {"ymann","yycrj","oecij","ymcnj","yzcrj","yycij","xecij","yecij","ymanj","yzcnj","ymain"}));
+        w.wordLadderAll(new HashSet<>(Arrays.asList(new String[] {"ymann","yycrj","oecij","ymcnj","yzcrj","yycij","xecij","yecij","ymanj","yzcnj","ymain"})), "ymain", "oecij");
 
         // String minl = t.minLenSuperSubString1("ADOBECODEBANC", "ABC");
 
