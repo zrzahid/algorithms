@@ -3614,6 +3614,87 @@ public class Test {
                 
                 return wordBreakCountAll(dictionary, s, new HashMap<>());
             }
+            
+            /**
+             * Given a string s, partition s such that every substring of the partition is a palindrome.
+             * Return all possible palindrome partitioning of s.
+
+                Example:
+                
+                Input: "aab"
+                Output:
+                [
+                  ["aa","b"],
+                  ["a","a","b"]
+                ]
+
+             * @param s
+             * @return
+             */
+            public List<List<String>> partitionIntoPalindrom(String s) {
+                if(s.isEmpty()){
+                    List<List<String>> empty = new ArrayList<>();
+                    empty.add(Collections.emptyList());
+                    return empty;
+                }
+                
+                return partitionPalinromAll(s, new HashMap<>());
+            }
+            
+            // use word break to break the word into palindromes
+            public List<List<String>> partitionPalinromAll(String text, Map<String, List<List<String>>> dpMap) {
+                // if already computed the current substring text then return from map
+                if (dpMap.containsKey(text)) {
+                    return dpMap.get(text);
+                }
+                List<List<String>> result = new ArrayList<>();
+
+                // if the whole word is in the dictionary then we add this to final result
+                if (isPalindrom(text)) {
+                    result.add(Arrays.asList(new String[]{text}));
+                }
+
+                // try each prefix and extend
+                for (int i = 0; i < text.length(); i++) {
+                    // take a prefix and recursively chck if the remaining (suffix) can be broken
+                    String prefix = text.substring(0, i + 1);
+                    if (isPalindrom(prefix)) {
+                        // extend
+                        String suffix = text.substring(i + 1);
+                        List<List<String>> subRes = partitionPalinromAll(suffix, dpMap);
+                        // for each result list from the suffix make the final answer by
+                        // appending prefix to the front of each answer
+                        for (List<String> sub : subRes) {
+                            List<String> s =  new ArrayList<>();
+                            s.add(prefix);
+                            s.addAll(sub);
+                            result.add(s);
+                        }
+                    }
+                }
+
+                // cache the result for later use
+                dpMap.put(text, result);
+                return result;
+            }
+            
+            private boolean isPalindrom(String w){
+                if(w.length() == 0){
+                    return false;
+                }
+                if(w.length() == 1){
+                    return true;
+                }
+                int i = 0, j = w.length()-1;
+                while(i < j){
+                    if(w.charAt(i) != w.charAt(j)){
+                        return false;
+                    }
+                    i++;j--;
+                }
+                
+                return true;
+            }
         }
 
         class Factors {
@@ -9380,6 +9461,43 @@ public class Test {
                 if ((price[i] - price[minBuy]) > maxProfit) {
                     maxProfit = price[i] - price[minBuy];
                 }
+            }
+
+            return maxProfit;
+        }
+        
+        public int maxProfitTradeMany(int[] price) {
+            if(price.length == 0){
+                return 0;
+            }
+            int maxProfit = 0;
+            int minBuy = 0;
+            int maxSell = 0;
+
+            int i = 0;
+            while (i < price.length-1) {
+                // in order to maximize profit we will be greedy
+                // we don't buy if the stock pricing is falling 
+                // but we opportunisically buy just before stock price starts to rise again
+                // imagine if we had an oracle telling us what will be the price of the stock next day
+                while(i < price.length - 1 && price[i+1] <= price[i]){
+                    i++;
+                }
+                // set the local minima for buy
+                minBuy = i;
+                
+                // in order to maximize profit we will be greedy
+                // we don't sell immediately if the stock price is raising 
+                // but we opportunisically sell just before stock price starts to fall again
+                // imagine if we had an oracle telling us what will be the price of the stock next day
+                while(i < price.length - 1 && price[i+1] > price[i]){
+                    i++;
+                }
+                // set the local minima for buy
+                maxSell = i;
+                
+                // collect all profits
+                maxProfit += price[maxSell] - price[minBuy];
             }
 
             return maxProfit;
