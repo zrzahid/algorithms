@@ -6973,6 +6973,64 @@ public class Test {
     }
 
     class TopK {
+        
+        public int[] topKFrequent(int[] nums, int k) {
+            // assume int[] {number, freq}  
+            // minHeap 
+            PriorityQueue<int[]> topKHeap = new PriorityQueue<>(k, (e1, e2) -> e1[1] - e2[1]);
+            Map<Integer, Integer> freqMap = new HashMap<>();
+
+            // compute freq - O(n)
+            for (int num : nums) {
+                freqMap.put(num, 1+freqMap.getOrDefault(num, 0));
+            }
+            // build heap O(nlgk)
+            for (int num : freqMap.keySet()) {
+                topKHeap.offer(new int[]{num, freqMap.get(num)});
+                // remove the least frequent one
+                if(topKHeap.size() > k){
+                    topKHeap.poll();
+                }
+            }
+
+            // extract the tops - O(k)
+            int[] topK = new int[k];
+            int i = 0;
+            while (topKHeap.size() > 0) {
+                topK[i++] = topKHeap.poll()[0];
+            }
+
+            return topK;
+        }
+        
+        public List<String> topKFrequentWords(String[] words, int k) {
+            Map<String, Integer> freqMap = new HashMap<>();
+            // minHeap 
+            // if same freq then lexico shorter comes first
+            PriorityQueue<String> topKHeap = new PriorityQueue<>(k, (e1, e2) -> (freqMap.get(e1) == freqMap.get(e2) ? e2.compareTo(e1) : freqMap.get(e1) - freqMap.get(e2)));
+            
+            // compute freq - O(n)
+            for (String w : words) {
+                freqMap.put(w, 1+freqMap.getOrDefault(w, 0));
+            }
+            
+            // build heap O(nlgk)
+            for (String w : freqMap.keySet()) {
+                topKHeap.offer(w);
+                // remove the least frequent one
+                if(topKHeap.size() > k){
+                    topKHeap.poll();
+                }
+            }
+
+            // extract the tops - O(k)
+            List<String> topK = new LinkedList<>();
+            while (topKHeap.size() > 0) {
+                topK.add(0, topKHeap.poll());
+            }
+
+            return topK;
+        }
 
         public String[] topKWords(final String stream, final int k) {
             final class WordFreq implements Comparable<WordFreq> {
@@ -7021,6 +7079,27 @@ public class Test {
             }
 
             return topK;
+        }
+        
+        public int[][] kClosest(int[][] points, int k) {
+            // max heap - reverse order
+            final PriorityQueue<int[]> kClosest = new PriorityQueue<>(k, (p1, p2) -> Integer.compare(p2[0]*p2[0] + p2[1]*p2[1], p1[0]*p1[0] + p1[1]*p1[1]));
+
+            for (int i = 0; i < points.length; i++) {
+                kClosest.add(points[i]);
+                
+                // if more than k then rmeove the top/max one
+                if (kClosest.size() > k) {
+                    kClosest.remove();
+                } 
+            }
+
+            int[][] res = new int[k][2];
+            while (k > 0) {
+                res[--k] = kClosest.poll();
+            }
+            
+            return res;
         }
 
         public Point[] closestk(final Point points[], final int k) {
