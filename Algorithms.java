@@ -29,6 +29,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import test.Test.Graph.Edge;
+import test.Test.GraphTraversals.Trie;
 import test.Test.IntervalOps.PartitionLabels;
 
 public class Test {
@@ -2603,6 +2604,82 @@ public class Test {
 
             return shortestPath;
         }
+        
+        class Trie {
+
+            /** Initialize your data structure here. */
+            class Node{
+                char c;
+                boolean hasWord;
+                Map<Character, Node> children;
+                
+                public Node(char c){
+                    this.c = c;
+                    this.hasWord = false;
+                    this.children = new HashMap<>();
+                }
+            }
+            
+            Node root;
+            public Trie() {
+                this.root = new Node('\0');
+            }
+            
+            /** Inserts a word into the trie. */
+            public void insert(String word) {
+                int n = word.length();
+                Node parent = root;
+                for(int i = 0; i < n; i++) {
+                    char c = word.charAt(i);
+                    Node child = parent.children.getOrDefault(c, new Node(c));
+                    child.hasWord |= (i == (n-1));
+                    parent.children.put(c, child);
+                    parent = child;
+                }
+            }
+            
+            /** Returns if the word is in the trie. */
+            public boolean search(String word) {
+                int n = word.length();
+                Node parent = root;
+                for(int i = 0; i < n; i++) {
+                    char c = word.charAt(i);
+                    Node child = parent.children.get(c);
+                    if(child != null){
+                        parent = child;
+                        if((i == n-1) && child.hasWord){
+                            return true;
+                        }
+                    }
+                    else{
+                        break;
+                    }
+                }
+                
+                return false;
+            }
+            
+            /** Returns if there is any word in the trie that starts with the given prefix. */
+            public boolean startsWith(String prefix) {
+                int n = prefix.length();
+                Node parent = root;
+                for(int i = 0; i < prefix.length(); i++) {
+                    char c = prefix.charAt(i);
+                    Node child = parent.children.get(c);
+                    if(child != null){
+                        parent = child;
+                        if(i == (n-1)){
+                            return true;
+                        }
+                    }
+                    else{
+                        break;
+                    }
+                }
+                
+                return false;
+            }
+        }
     }
 
     class WalkBFS {
@@ -3104,6 +3181,172 @@ public class Test {
             board[i][j] ^= 256;
 
             return result;
+        }
+        
+        /**
+         * Given a 2D board and a list of words from the dictionary, find all words in the board.
+         * Each word must be constructed from letters of sequentially adjacent cell, 
+         * where "adjacent" cells are those horizontally or vertically neighboring. 
+         * The same letter cell may not be used more than once in a word.
+         * 
+         * Input: 
+            board = [
+              ['o','a','a','n'],
+              ['e','t','a','e'],
+              ['i','h','k','r'],
+              ['i','f','l','v']
+            ]
+            words = ["oath","pea","eat","rain"]
+            
+            Output: ["eat","oath"]
+         * 
+         * @param board
+         * @param words
+         * @return
+         */
+        public List<String> findWords(char[][] board, String[] words) {
+            if (words == null || words.length == 0 || board == null || board.length == 0) {
+                return Collections.emptyList();
+            }
+            
+            List<String> res = new ArrayList<>();
+            TrieNode root = buildTrie(words);
+            for (int i = 0; i < board.length; i++) {
+                for (int j = 0; j < board[i].length; j++) {
+                    findWordsBacktrack(board, i, j, root, res);
+                }
+            }
+
+            return res;
+        }
+
+        private void findWordsBacktrack(char[][] board, int i, int j, TrieNode root, List<String> res) {
+            // check for safety - prune the search
+            if (i < 0 || i >= board.length || j < 0 || j >= board[i].length) {
+                return;
+            }
+            
+            char c = board[i][j];
+            // base case
+            if(c == '$' || root.childs[c-'a'] == null){
+                return;
+            }
+            else{
+                root = root.childs[c-'a'];
+                if(root.hasWord){
+                    res.add(root.word);
+                    // do not add the same word to result
+                    root.hasWord = false;
+                }
+            }
+            
+            // set visited to avoid cycle, we can reuse the board
+            board[i][j] = '$';
+            int n = board.length;
+            int m = board[0].length;
+            // backtrack
+            if(i+1 < n) findWordsBacktrack(board, i + 1, j, root, res);
+            if(i-1 >= 0) findWordsBacktrack(board, i - 1, j, root, res);
+            if(j-1 >= 0) findWordsBacktrack(board, i, j - 1, root, res);
+            if(j+1 < m) findWordsBacktrack(board, i, j + 1, root, res);
+            board[i][j] = c;
+        }
+
+        private TrieNode buildTrie(String[] words){
+            
+            TrieNode root = new TrieNode();
+            for(String word : words){
+                TrieNode parent = root;
+                int n = word.length();
+                for(int i = 0; i < n; i++){
+                    char c = word.charAt(i);
+                    TrieNode child = parent.childs[c-'a'];
+                    if(child == null){
+                        child = new TrieNode();
+                        parent.childs[c-'a'] = child;
+                    }
+                    
+                    if(i == n-1){
+                        child.hasWord = true;
+                        child.word = word;
+                    }
+                    
+                    parent = child;
+                }
+            }
+            
+            return root;
+        }
+
+        class TrieNode{
+            String word;
+            boolean hasWord;
+            TrieNode[] childs = new TrieNode[26];
+        }
+        
+        class UniquePathsWalkOverEmptyCells {
+            /**
+             * On a 2-dimensional grid, there are 4 types of squares:
+             * 1 represents the starting square.  There is exactly one starting square.
+             * 2 represents the ending square.  There is exactly one ending square.
+             * 0 represents empty squares we can walk over.
+             * -1 represents obstacles that we cannot walk over.
+             * 
+             * Return the number of 4-directional walks from the starting square to the ending 
+             * square, that walk over every non-obstacle square exactly once.
+             * 
+             * Input: [[1,0,0,0],[0,0,0,0],[0,0,2,-1]]
+                Output: 2
+                Explanation: We have the following two paths: 
+                1. (0,0),(0,1),(0,2),(0,3),(1,3),(1,2),(1,1),(1,0),(2,0),(2,1),(2,2)
+                2. (0,0),(1,0),(2,0),(2,1),(1,1),(0,1),(0,2),(0,3),(1,3),(1,2),(2,2)
+             * 
+             */
+            int emptyCellCount = 1;
+            int count = 0;
+            public int uniquePathsIII(int[][] grid) {
+                int si = 0, sj = 0;
+                for(int i = 0; i < grid.length; i++){
+                    for(int j = 0;  j < grid[0].length; j++){
+                        if(grid[i][j] == 0){
+                            emptyCellCount++;
+                        }
+                        if(grid[i][j] == 1){
+                            si = i; sj = j;
+                        }
+                    }
+                }
+                
+                uniquePathsIIIWalkDFS(grid, si, sj);
+                return count;
+            }
+            
+            public void uniquePathsIIIWalkDFS(int[][] grid, int i, int j){
+                // sanity and edge conditions
+                if(i < 0 || j < 0 || i > grid.length - 1 || j > grid[0].length - 1 || grid[i][j] < 0){
+                    return;
+                }
+                
+                // base case - we reached the end  but have we actually visited all the empty cell?
+                // we can track empty cell. As soon as we visit one empty cell we can reduce count
+                // as soon as we backtrack we can increase count
+                if(grid[i][j] == 2){
+                    if(emptyCellCount == 0)
+                        count++;
+                    return;
+                }
+                
+                // otherwise it is an empty cell
+                // traverse all emoty cells
+                emptyCellCount--;
+                grid[i][j] = -1;
+                uniquePathsIIIWalkDFS(grid,i+1, j);
+                uniquePathsIIIWalkDFS(grid,i-1, j);
+                uniquePathsIIIWalkDFS(grid,i, j+1);
+                uniquePathsIIIWalkDFS(grid,i, j-1);
+                grid[i][j] = 0; 
+                emptyCellCount++;
+            }
         }
 
         public List<int[]> getWalkCandidates(int[][] m, int i, int j, boolean[][] visited) {
@@ -3837,6 +4080,97 @@ public class Test {
         }
     }
 
+    class LRUCache {
+
+        class DLLNode{
+            public int key;
+            public int value;
+            public DLLNode next;
+            public DLLNode prev;
+            
+            public DLLNode(int key, int value){
+                this.key = key;
+                this.value = value;
+            }
+        }
+        
+        private Map<Integer, DLLNode> cache;
+        private DLLNode dummyHead;
+        private DLLNode dummyTail;
+        int capacity;
+        
+        public LRUCache(int capacity) {
+            this.capacity = capacity;
+            cache = new LinkedHashMap<>(capacity);
+            // setup empty DLL
+            dummyHead = new DLLNode(-1, -1);
+            dummyTail = new DLLNode(-1, -1);
+            dummyHead.next = dummyTail;
+            dummyTail.prev = dummyHead;
+        }
+        
+        public int get(int key) {
+            if(cache.containsKey(key)){
+                // move the node up to the front
+                DLLNode node = cache.get(key);
+                delete(node);
+                addLast(node);
+                return node.value;
+            }
+            
+            return -1;
+        }
+        
+        public void put(int key, int value) {
+            if(cache.containsKey(key)){
+                cache.get(key).value = value;
+            }
+            else{
+                if(cache.size() == this.capacity){
+                    DLLNode node = deleteFirst();
+                    cache.remove(node.key);
+                }
+                
+                DLLNode node = new DLLNode(key, value);
+                addLast(node);
+                cache.put(key, node);
+            }
+        }
+        
+        private boolean addLast(DLLNode node){
+            DLLNode prev = dummyTail.prev;
+            dummyTail.prev = node;
+            node.next = dummyTail;
+            node.prev = prev;
+            prev.next = node;
+            
+            return true;
+        }
+        
+        private DLLNode deleteFirst() {
+            DLLNode next = dummyHead.next;
+            dummyHead.next = next.next;
+            next.next.prev = dummyHead;
+            
+            return next;
+        }
+        
+        private boolean delete(DLLNode node) {
+            if(cache.size() == 0){
+                return false;
+            }
+            
+            DLLNode prev = node.prev;
+            DLLNode next = node.next;
+            
+            prev.next = node.next;
+            next.prev = prev;
+            
+            return true;
+        }
+    }
+
+    
     class Substrings {
 
         public int strStr(String s, String t) {
@@ -6834,6 +7168,73 @@ public class Test {
 
     class NumericalComputation {
 
+        public int majorityElement(int[] nums) {
+            int count = 1;
+            int candidate = nums[0];
+            
+            for(int i = 1; i < nums.length; i++){
+                if(nums[i] == candidate) count++;
+                else if (count == 0){
+                    candidate = nums[i];
+                    count = 1;
+                }
+                else{
+                    count--;
+                }
+            }
+            
+            return candidate;
+        }
+        
+        /**
+         * Given an integer array of size n, find all elements that appear more than ⌊ n/3 ⌋ times.
+         * Follow-up: Could you solve the problem in linear time and in O(1) space?
+         * @param nums
+         * @return
+         */
+        public List<Integer> majorityElementOneThird(int[] nums) {
+            int cand1Count = 0;
+            int cand2Count = 0;
+            int candidate1 = 0; // choose an number for candidate 1
+            int candidate2 = 1; // choose a differenr number for candidatw 2
+
+            for(int i = 0; i < nums.length; i++){
+                if(nums[i] == candidate1) cand1Count++;
+                else if(nums[i] == candidate2) cand2Count++;
+                else if (cand1Count == 0){
+                    candidate1 = nums[i];
+                    cand1Count = 1;
+                }
+                else if (cand2Count == 0){
+                    candidate2 = nums[i];
+                    cand2Count = 1;
+                }
+                else{
+                    cand1Count--;
+                    cand2Count--;
+                }
+            }
+
+            // do 2nd round 
+            cand1Count = 0;
+            cand2Count = 0;
+            for (int i = 0; i < nums.length; i++) {
+                if (nums[i] == candidate1)
+                    cand1Count++;
+                else if (nums[i] == candidate2)
+                    cand2Count++;
+            }
+            
+            List<Integer> res = new ArrayList<>();
+            if(cand1Count > nums.length/3){
+                res.add(candidate1);
+            }
+            if(cand2Count > nums.length/3){
+                res.add(candidate2);
+            }
+            return res;
+        }
+        
         public double myPow(double x, int n) {
             if (n == 0)
                 return 1;
@@ -8741,6 +9142,48 @@ public class Test {
                     "min diff between two array elements: between " + min1 + " and " + min2 + " min diff: " + minDiff);
             return minDiff;
         }
+        
+        /**
+         * Given a list of non-negative integers nums, arrange them such that they form the largest number.
+         * 
+         * Input: nums = [10,2]
+         * Output: "210"
+         * 
+         * Input: nums = [3,30,34,5,9]
+         * Output: "9534330"
+         * 
+         * @param nums
+         * @return
+         */
+        public String largestNumber(int[] nums) {
+            String[] numsStr = new String[nums.length];
+            boolean allZero = true;
+            for(int i = 0; i<nums.length; i++){
+                if(nums[i] > 0){
+                    allZero = false;
+                }
+                numsStr[i] = nums[i]+"";
+            }
+            
+            if(allZero){
+                return "0";
+            }
+            
+            Arrays.sort(numsStr, new Comparator<String>() {
+
+                @Override
+                public int compare(String o1, String o2) {
+                    return (o2+o1).compareTo(o1+o2);
+                }
+            });
+            
+            StringBuilder sb = new StringBuilder();
+            for(int i = 0; i<numsStr.length; i++){
+                sb.append(numsStr[i]);
+            }
+            
+            return sb.toString();
+        }
 
         public void wiggleSort(int a[]) {
             for (int i = 0; i < a.length; i++) {
@@ -9620,6 +10063,45 @@ public class Test {
 
             return maxProfit;
         }
+        
+        class MinStack {
+
+            Stack<Integer> stack;
+            int min = Integer.MAX_VALUE;
+            /** initialize your data structure here. */
+            public MinStack() {
+                stack = new Stack<>();
+            }
+            
+            public void push(int x) {
+                // if this is a new min then we are changing the minimum
+                // we record the prev minumim by an additional push.
+                if(x <= min){
+                    stack.push(min);
+                    min = x;
+                }
+                // then push x 
+                // make sure we pop in the reverse order
+                stack.push(x);
+            }
+            
+            public void pop() {
+                int x = stack.pop();
+                // if we arre popping min then take the second minumum
+                // second minium wss pushed when minium value was chnaged
+                if (x == min){
+                    min = stack.pop();
+                }
+            }
+            
+            public int top() {
+                return stack.peek();
+            }
+            
+            public int getMin() {
+                return min;
+            }
+        }
     }
 
     class SocialMedia {
@@ -9655,6 +10137,30 @@ public class Test {
         Test t = new Test();
         Sorting st = t.new Sorting();
         st.merge(new int[] { 1, 2, 3, 0, 0, 0 }, 3, new int[] { 2, 5, 6 }, 3);
+        
+        //["Trie","insert","insert","insert","insert","insert","insert","search","search","search","search","search","search","search","search","search","startsWith","startsWith","startsWith","startsWith","startsWith","startsWith","startsWith","startsWith","startsWith"]
+        //[[],["app"],["apple"],["beer"],["add"],["jam"],["rental"],["apps"],["app"],["ad"],["applepie"],["rest"],["jan"],["rent"],["beer"],["jam"],["apps"],["app"],["ad"],["applepie"],["rest"],["jan"],["rent"],["beer"],["jam"]]
+
+        Trie tr = t.new GraphTraversals().new Trie();
+        tr.insert("app");
+        tr.insert("apple");
+        tr.insert("apps");
+        tr.insert("app");
+        tr.search("app");
+        tr.search("apple");
+        tr.startsWith("app");
+        tr.startsWith("ad");
+        
+        LRUCache lru = t.new LRUCache(2);
+        lru.put(1, 1);
+        lru.put(2, 2);
+        lru.get(1);
+        lru.put(3, 3);
+        lru.get(2);
+        lru.put(3, 3);
+        lru.get(1);
+        lru.get(2);
+        lru.get(4);
         
         LinkedListOps liops = t.new LinkedListOps();
         ListNode mydum = t.new ListNode(0);
