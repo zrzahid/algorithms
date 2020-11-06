@@ -868,20 +868,20 @@ public class Test {
         }
 
         public TreeNode LCA(TreeNode root, TreeNode x, TreeNode y) {
-            if (root == null)
-                return null;
-            if (root == x || root == y)
-                return root;
-
-            TreeNode leftSubTree = LCA(root.left, x, y);
-            TreeNode rightSubTree = LCA(root.right, x, y);
-
-            // x is in one subtree and and y is on other subtree of root
-            if (leftSubTree != null && rightSubTree != null)
-                return root;
-            // either x or y is present in one of the subtrees of root or none present in
-            // either side of the root
-            return leftSubTree != null ? leftSubTree : rightSubTree;
+                if (root == null)
+                    return null;
+                if (root == x || root == y)
+                    return root;
+    
+                TreeNode leftSubTree = LCA(root.left, x, y);
+                TreeNode rightSubTree = LCA(root.right, x, y);
+    
+                // x is in one subtree and and y is on other subtree of root
+                if (leftSubTree != null && rightSubTree != null)
+                    return root;
+                // either x or y is present in one of the subtrees of root or none present in
+                // either side of the root
+                return leftSubTree != null ? leftSubTree : rightSubTree;
         }
 
         public int getLevel(TreeNode root, int count, TreeNode node) {
@@ -4782,6 +4782,23 @@ public class Test {
                 return false;
             return isValidBST(root.left, minVal, root.val) && isValidBST(root.right, root.val, maxVal);
         }
+        
+        public TreeNode lowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {
+            if (root == null) {
+                return null;
+            }
+
+            while (root != null) {
+                if (root.val > p.val && root.val > q.val) {
+                    root = root.left;
+                } else if (root.val < p.val && root.val < q.val) {
+                    root = root.right;
+                } else {
+                    return root;
+                }
+            }
+            return null;
+        }
 
         public boolean isBSTPostOrder(int[] a, int p, int q) {
             int n = q - p + 1;
@@ -5347,8 +5364,18 @@ public class Test {
             return false;
         }
 
+        /**
+         * Write an efficient algorithm that searches for a value in an m x n matrix. 
+         * This matrix has the following properties:
+         * Integers in each row are sorted in ascending from left to right.
+         * Integers in each column are sorted in ascending from top to bottom.
+         * 
+         * @param matrix
+         * @param target
+         * @return
+         */
         public boolean searchMatrix2(int[][] matrix, int target) {
-            if (matrix == null && matrix.length == 0) {
+            if (matrix == null || matrix.length == 0) {
                 return false;
             }
             int n = matrix.length;
@@ -8363,6 +8390,31 @@ public class Test {
             return (int) dp[0];
         }
         
+        public int[] slidingWindowMax(final int[] in, final int w) {
+            if(in.length == 0 || w == 0){
+                return in;
+            }
+            final int[] max_left = new int[in.length];
+            final int[] max_right = new int[in.length];
+        
+            max_left[0] = in[0];
+            max_right[in.length - 1] = in[in.length - 1];
+        
+            for (int i = 1; i < in.length; i++) {
+                max_left[i] = (i % w == 0) ? in[i] : Math.max(max_left[i - 1], in[i]);
+        
+                final int j = in.length - i - 1;
+                max_right[j] = (j % w == 0) ? in[j] : Math.max(max_right[j + 1], in[j]);
+            }
+        
+            final int[] sliding_max = new int[in.length - w + 1];
+            for (int i = 0, j = 0; i + w <= in.length; i++) {
+                sliding_max[j++] = Math.max(max_right[i], max_left[i + w - 1]);
+            }
+        
+            return sliding_max;
+        }
+        
         class MinsumPathTriangle {
             /**
              *  Given a triangle, find the minimum path sum from top to bottom. 
@@ -9063,6 +9115,16 @@ public class Test {
             }
         }
 
+        /**
+         * Given an array nums, write a function to move all 0's to the end of 
+         * it while maintaining the relative order of the non-zero elements.
+
+                Example:
+                
+                Input: [0,1,0,3,12]
+                Output: [1,3,12,0,0]
+         * @param nums
+         */
         public void moveZeroes(int[] nums) {
             int left = -1, i = 0, n = nums.length;
 
@@ -10131,7 +10193,94 @@ public class Test {
             return influencer;
         }
     }
-
+    class KthSmallest {
+        public int kthLargest(int[] nums, int k) {
+            // kth largest is (n-k+1) th smallest
+            return kthSmallest(nums, 0, nums.length-1, nums.length - k + 1);
+        }
+        
+        public int kthSmallest(int nums[], int l, int h, int k){
+            if(l > h){
+                return -1;
+            }
+            // partition the array with respect to a random pivot.
+            // if there are exactly k elements less than equal to the pivot (left partition) 
+            // then pivot is the kth smallest. If more elements on left then keep searching recursively
+            // for kth on left partition. If less elements on the left then find look for the remaining (k-leftSize) to the right
+            
+            int pivotIndex = partition(nums, l, h);
+            // total number of elements on the left partition
+            int n = pivotIndex - l + 1;
+            
+            if(k == n){
+                // this is thr kth
+                return nums[pivotIndex];
+            }
+            // more elements on left - search on left
+            else if(n > k){
+                return kthSmallest(nums, l, pivotIndex - 1, k);
+            }
+            // less elements on left , so find  (k-n) th on the right
+            else{
+                return kthSmallest(nums, pivotIndex + 1, h, k-n);
+            }
+        }
+        
+        public int partition(int nums[], int l, int h){
+            int p = l-1;
+            int i = l;
+            
+            // take a random element as pivot - ideally the pivot should be a median
+            int pivotIndex = h;//(int) Math.round(l + Math.random() * (h - l + 1));
+            
+            // swap the pivot at the end
+            //swap(nums, pivotIndex, h);
+            
+            // now loop from low to high and parrtition the array into two
+            // such that x <= pivot is on the left of the partition p and 
+            // x > pivot stays on the right
+            for(i = l; i < h; i++) {
+                if(nums[i] <= nums[pivotIndex]){
+                    swap(nums, ++p, i);
+                }
+            }
+            
+            // swap the pivot to it's own position 
+            swap(nums, p+1, h);
+            // return the pivot index
+            return p+1;
+        }
+        
+        private int medianOfMedianPartition(int nums[], int l, int h){
+            int pivot = medianOfMedians(nums, l, h);
+            swap(nums, h, pivot);
+            return partition(nums, l, h);
+        }
+        
+        private int medianOfMedians(int A[], int left, int right){
+            final int numMedians = Math.round((right - left) / 5);
+            for (int i = 0; i < numMedians; i++) {
+                // get the median of the five-element subgroup
+                final int subLeft = left + i * 5;
+                int subRight = subLeft + 4;
+                if (subRight > right) {
+                    subRight = right;
+                }
+                // alternatively, use a faster method that works on lists of size 5
+                final int q = (subRight - subLeft) / 2;
+                swap(A, q, subRight);
+                final int medianIdx = partition(A, subLeft, subRight);
+                // move the median to a contiguous block at the beginning of the list
+                swap(A, left + i, medianIdx);
+            }
+            // select the median from the contiguous block
+            final int q = numMedians / 2;
+            swap(A, q, right);
+            
+            return partition(A, left, left + numMedians - 1);
+        }
+    }
+    
     public static void main(String[] args) {
 
         Test t = new Test();
@@ -10327,3 +10476,4 @@ public class Test {
         PermutationCombinatons pc = t.new PermutationCombinatons();
         pc.permList(input, cur, 0, result);
     }
+}
