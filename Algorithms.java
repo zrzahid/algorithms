@@ -642,7 +642,7 @@ public class Test {
 
             return null;
         }
-
+        
         public void inorderMorris(TreeNode root) {
 
             TreeNode cur = root;
@@ -1228,8 +1228,39 @@ public class Test {
                 return root;
             }
         }
-
+        
         public TreeNode[] randomKSampleTreeNode(TreeNode root, int k) {
+            Queue<TreeNode> q = new ArrayDeque<>();
+            TreeNode[] reservoir = new TreeNode[k];
+            q.add(root);
+            int i = 0;
+            
+            while(!q.isEmpty()) {
+                TreeNode node = q.poll();
+                
+                // add to reservoir as long as it is not full (size k)
+                if(i < k) {
+                    reservoir[i++] = node;
+                }
+                // if reservoir is full then take one sample (random) from index 0 to i 
+                // if the random index is within reservoir (< k) then replace the slot with this new node
+                else {
+                    int index = (int) Math.random()*(i + 1);
+                    if(index < k) {
+                        reservoir[i++] = node;
+                    }
+                }
+                
+                if(node.left != null)
+                    q.add(node.left);
+                if(node.right != null)
+                    q.add(node.right);
+            }
+            
+            return reservoir;
+        }
+
+        public TreeNode[] randomKSampleTreeNode1(TreeNode root, int k) {
             TreeNode[] reservoir = new TreeNode[k];
             Queue<TreeNode> queue = new LinkedList<TreeNode>();
             queue.offer(root);
@@ -1271,6 +1302,7 @@ public class Test {
             return reservoir;
         }
     }
+    
 
     class BinarryTreeFlattenReconstruct {
 
@@ -9251,6 +9283,55 @@ public class Test {
             }
             System.out.println();
         }
+        
+        /**
+         * 
+         * Given a string, sort it in decreasing order based on the frequency of characters.
+
+            Example 1:
+            
+            Input:
+            "tree"
+            
+            Output:
+            "eert"
+
+         * 
+         * @param s
+         * @return
+         */
+        public String frequencySort(String s) {
+            Map<Character, Integer> freqMap = new HashMap<>();
+            // compute freq
+            for (char c : s.toCharArray()) {
+                freqMap.put(c, 1+freqMap.getOrDefault(c, 0));
+            }
+
+            // now bucket sort the frequencies
+            // each bucket index is the freq and values are all the charcters with the freq
+            // min frequencey is 1 and max frerquency is the length of the string
+            List<Character>[] buckets = new List[s.length()+1];
+            for(char c : freqMap.keySet()){
+                int freq = freqMap.get(c);
+                if(buckets[freq] == null)
+                    buckets[freq] = new ArrayList<>();
+                buckets[freq].add(c); 
+            }
+            
+            // now construct the string by repeating the charcter of each bucket freq times
+            char[] res = new char[s.length()];
+            int j = 0;
+            for(int i = buckets.length-1; i >= 0; i--){
+                if(buckets[i] != null) {
+                    for(char c: buckets[i]){
+                        Arrays.fill(res, j, j + i, c);
+                        j += i;
+                    }
+                }
+            }
+            
+            return new String(res);
+        }
 
         public int minDiffElements(int a1[], int a2[]) {
             int minDiff = Integer.MAX_VALUE;
@@ -10365,6 +10446,9 @@ public class Test {
         Test t = new Test();
         Sorting st = t.new Sorting();
         st.merge(new int[] { 1, 2, 3, 0, 0, 0 }, 3, new int[] { 2, 5, 6 }, 3);
+        
+        Sorting ss = t.new Sorting();
+        ss.frequencySort("his s he a ha he  ha ae");
         
         //["Trie","insert","insert","insert","insert","insert","insert","search","search","search","search","search","search","search","search","search","startsWith","startsWith","startsWith","startsWith","startsWith","startsWith","startsWith","startsWith","startsWith"]
         //[[],["app"],["apple"],["beer"],["add"],["jam"],["rental"],["apps"],["app"],["ad"],["applepie"],["rest"],["jan"],["rent"],["beer"],["jam"],["apps"],["app"],["ad"],["applepie"],["rest"],["jan"],["rent"],["beer"],["jam"]]
