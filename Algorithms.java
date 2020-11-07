@@ -2004,7 +2004,49 @@ public class Test {
 
             return reversed;
         }
+        
+        // cut the list at kth node 
+        // then traverse right part and put in front of first
+        public ListNode rotateRight(ListNode head, int k) {
+            if (k == 0 || head == null || head.next == null) {
+                return head;
+            }
 
+            int n = 0;
+            ListNode p1 = head;
+            // tail1 is the tail of the list 
+            ListNode tail = head;
+            while (p1 != null) {
+                n++;
+                tail = p1;
+                p1 = p1.next;
+            }
+
+            k = k % n;
+            if (k == 0) {
+                return head;
+            }
+
+            // find the head of the right part
+            // it is kth node from the last
+            // we already know the length so, just use counter
+            p1 = head;
+            ListNode prev = null;
+            // kth node from the last is n-kth node from begining
+            k = n-k;
+            while (k-- > 0) {
+                prev = p1;
+                p1 = p1.next;
+            }
+            
+            // now move right part in front of left part
+            tail.next = head;
+            head = p1;
+            prev.next = null;
+
+            return head;
+        }
+        
         public ListNode rotateListRight(ListNode head, int k) {
             if (k == 0 || head == null || head.next == null) {
                 return head;
@@ -2029,6 +2071,7 @@ public class Test {
                 fast = fast.next;
             }
 
+            // use two pointer to split
             ListNode prevSlow = null;
             ListNode prevFast = null;
             while (fast != null) {
@@ -10447,6 +10490,21 @@ public class Test {
         Sorting st = t.new Sorting();
         st.merge(new int[] { 1, 2, 3, 0, 0, 0 }, 3, new int[] { 2, 5, 6 }, 3);
         
+        
+        ListNode myhead = t.new ListNode(1);
+        ListNode mydum = t.new ListNode(0);
+        mydum.next = myhead;
+        myhead.next = t.new ListNode(2);
+        myhead = myhead.next;
+        myhead.next = t.new ListNode(3);
+        myhead = myhead.next;
+        myhead.next = t.new ListNode(4);
+        myhead = myhead.next;
+        myhead.next = t.new ListNode(5);
+        
+        LinkedListOps ll = t.new LinkedListOps();
+        ll.rotateListRight(mydum.next, 1);
+        
         Sorting ss = t.new Sorting();
         ss.frequencySort("his s he a ha he  ha ae");
         
@@ -10475,16 +10533,6 @@ public class Test {
         lru.get(4);
         
         LinkedListOps liops = t.new LinkedListOps();
-        ListNode mydum = t.new ListNode(0);
-        ListNode myhead = t.new ListNode(1);
-        mydum.next = myhead;
-        myhead.next = t.new ListNode(2);
-        myhead = myhead.next;
-        myhead.next = t.new ListNode(3);
-        myhead = myhead.next;
-        myhead.next = t.new ListNode(4);
-        myhead = myhead.next;
-        myhead.next = t.new ListNode(5);
         liops.reverseBetween(mydum.next, 2, 4);
         
         DP dp = t.new DP();
