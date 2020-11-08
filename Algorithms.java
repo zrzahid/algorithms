@@ -9202,8 +9202,61 @@ public class Test {
 
             return kthSmallest.val;
         }
-    }
+        
+        
+        /**
+         * You are given two integer arrays nums1 and nums2 sorted in ascending order and an integer k.
+         * Define a pair (u,v) which consists of one element from the first array and one element from the second array.
+         * Find the k pairs (u1,v1),(u2,v2) ...(uk,vk) with the smallest sums.
 
+            Example 1:
+            
+            Input: nums1 = [1,7,11], nums2 = [2,4,6], k = 3
+            Output: [[1,2],[1,4],[1,6]] 
+            Explanation: The first 3 pairs are returned from the sequence: 
+             [1,2],[1,4],[1,6],[7,2],[7,4],[11,2],[7,6],[11,4],[11,6]
+         * @param nums1
+         * @param nums2
+         * @param k
+         * @return
+         */
+        public List<List<Integer>> kSmallestPairs(int[] nums1, int[] nums2, int k) {
+            // this is a merge sort problem of mering k list where each list is the row of the 
+            // cross product of two arrays
+            List<List<Integer>> res = new ArrayList<>();
+            if(nums1.length == 0 || nums2.length == 0){
+                return res;
+            }
+            
+            // a minHeap
+            PriorityQueue<int[]> pq = new PriorityQueue<>( (p1, p2) -> nums1[p1[0]]+nums2[p1[1]] - nums1[p2[0]] - nums2[p2[1]] );
+            
+            // as arrays are in sorted order to pairing first k from nums1 to each of nums2 is sufficient
+            // first push first pair (with nums2[0]) for each of the number from nums1
+            for(int i = 0; i < Math.min(k, nums1.length); i ++){
+                pq.offer(new int[]{i, 0});
+            }
+            
+            int count = 0;
+            // now bfs in pq - fetching first k elements is sufficient as arrays are already sorted
+            while(!pq.isEmpty() && count < k){
+                int[] index = pq.poll();
+                List<Integer> r = new ArrayList<>();
+                r.add(nums1[index[0]]);r.add(nums2[index[1]]);
+                res.add(r);
+                count++;
+                
+                // now push next smallest pair by incrementing nums2 index
+                // if it reaches the end of nums2 then we don't offer anything
+                if(index[1] < nums2.length - 1){
+                    pq.offer(new int[]{index[0], 1+index[1]});
+                }
+            }
+            
+            return res;
+        }
+    }
+    
     class RemoveElements {
         public int removeElementsInPlace(int[] nums, int val) {
             int count = 0;
@@ -10538,6 +10591,9 @@ public class Test {
         Sorting st = t.new Sorting();
         st.merge(new int[] { 1, 2, 3, 0, 0, 0 }, 3, new int[] { 2, 5, 6 }, 3);
         
+        Median m = t.new Median();
+        m.kSmallestPairs(new int[] {1, 2}, new int[] {3}, 3);
+        
         
         ListNode myhead = t.new ListNode(1);
         ListNode mydum = t.new ListNode(0);
@@ -10703,9 +10759,9 @@ public class Test {
         int[] res = bs.searchRange(new int[] { 5, 7, 7, 8, 8, 10 }, 8);
         System.out.println(res);
 
-        int m[][] = new int[][] { { 9, 9, 4 }, { 6, 6, 8 }, { 2, 1, 0 } };
+        int m1[][] = new int[][] { { 9, 9, 4 }, { 6, 6, 8 }, { 2, 1, 0 } };
         BackTrack btr = t.new BackTrack();
-        List<Integer> ers = btr.walkDFS(m);
+        List<Integer> ers = btr.walkDFS(m1);
 
         Graph g = t.new Graph();
         g.vertices = new int[] { 2, 3, 4, 6, 5, 7, 4, 1, 8, 3 };
