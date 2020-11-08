@@ -2135,34 +2135,6 @@ public class Test {
             return dummy.next;
         }
 
-        public ListNode mergeseort(ListNode head) {
-            if (head == null) {
-                return null;
-            }
-
-            // cut list into half
-            ListNode fast = head, slow = head, left = head, right = null;
-            while (fast != null && fast.next != null) {
-                if (fast == slow) {
-                    // cycle detected
-                    return head;
-                }
-
-                right = slow;
-                slow = slow.next;
-                fast = fast.next.next;
-            }
-            right.next = null;
-
-            left = mergeseort(left);
-            right = mergeseort(right);
-
-            // merge
-            head = merge(left, right);
-
-            return head;
-        }
-
         // sort a list
         public ListNode MergeSortList(ListNode head) {
             if (head == null || head.next == null)
@@ -2396,17 +2368,23 @@ public class Test {
             }
         }
 
-        public void allCasePermutataion(String str, int start, Set<String> res) {
-            if (start == str.length()) {
-                res.add(str);
+        public void allCasePermutataion(String str, char[] cur, int i, Set<String> res) {
+            if(i == str.length()){
+                res.add(new String(cur));
                 return;
             }
 
-            char[] chars = str.toCharArray();
-            chars[start] = Character.toLowerCase(chars[start]);
-            allCasePermutataion(new String(chars), start + 1, res);
-            chars[start] = Character.toUpperCase(chars[start]);
-            allCasePermutataion(new String(chars), start + 1, res);
+            // skip permutations for letterrs
+            if(Character.isLetter(cur[i])){
+                cur[i] = Character.toLowerCase(cur[i]);
+                allCasePermutataion(str, cur, i+1, res);
+
+                cur[i] = Character.toUpperCase(cur[i]);
+                allCasePermutataion(str, cur, i+1, res);
+            }
+            else{
+                allCasePermutataion(str, cur, i+1, res);
+            }
         }
 
         public List<List<Integer>> combine(int n, int k) {
@@ -2483,6 +2461,18 @@ public class Test {
             }
         }
 
+        /**
+         * Given an integer array, your task is to find all the different possible increasing subsequences 
+         * of the given array, and the length of an increasing subsequence should be at least 2.
+
+            Example:
+            
+            Input: [4, 6, 7, 7]
+            Output: [[4, 6], [4, 7], [4, 6, 7], [4, 6, 7, 7], [6, 7], [6, 7, 7], [7,7], [4,7,7]]
+
+         * @param nums
+         * @return
+         */
         public List<List<Integer>> findIncreasingSubsequences(int[] nums) {
             List<List<Integer>> res = new ArrayList<>();
 
@@ -4269,8 +4259,113 @@ public class Test {
 
             return count;
         }
+        
+        /**
+         * Given two strings s1 and s2, write a function to return true if s2 contains the permutation 
+         * of s1. In other words, one of the first string's permutations is the substring of the second string.
+         * 
+         * Input: s1 = "ab" s2 = "eidbaooo"
+         * Output: True
+         * Explanation: s2 contains one permutation of s1 ("ba").
 
-        public String minLenSuperSubString(String s, String t) {
+         * @param s1
+         * @param s2
+         * @return
+         */
+        public boolean checkInclusion(String s1, String s2) {
+            int[] hist = new int[26];
+            if(s1.length() > s2.length()){
+               return false;
+            }
+            
+            for(int i = 0; i < s1.length(); i++){
+                // make a sliding window of freq of legth of s1
+                hist[s1.charAt(i) - 'a']++;
+                hist[s2.charAt(i) - 'a']--;
+            }
+            if(matches(hist)) return true;
+            
+            // now slide the window
+            for(int j = s1.length(); j < s2.length(); j++){
+                hist[s2.charAt(j-s1.length()) - 'a']++;
+                hist[s2.charAt(j) - 'a']--;
+                if(matches(hist)) return true;
+            }
+            
+            return false;
+        }
+
+        private boolean matches(int[] count) {
+            for (int i = 0; i < 26; i++) {
+                if (count[i] != 0) return false;
+            }
+            return true;
+        }
+
+
+        /**
+         * Given two strings s and t, return the minimum window in s which will contain all the characters in t.
+         * If there is no such window in s that covers all characters in t, return the empty string "".
+         * Note that If there is such a window, it is guaranteed that there will always be only one unique minimum window in s.
+         * 
+         * Input: s = "ADOBECODEBANC", t = "ABC"
+         * Output: "BANC"
+         * 
+         * Input: s = "a", t = "a"
+         * Output: "a"
+         * 
+         * @param s
+         * @param t
+         * @return
+         */
+        public String minLenSuperSubString1(String s, String t) {
+            if (t.length() > s.length()) {
+                return "";
+            }
+            if (s.equals(t)) {
+                return s;
+            }
+
+            // keep a map for char frequency of the pattern
+            int[] hist = new int[256];
+            for (int i = 0; i < t.length(); i++) {
+                hist[t.charAt(i) - 'A']++;
+            }
+            // slide the window till we match all the chars then try to shrink
+            int i = 0, j = 0;
+            int bestStart = 0;
+            int minLen = Integer.MAX_VALUE;
+            int targetCount = t.length();
+            while (j < s.length()) {
+                // to expand the window decrease counter only if the matching char found
+                // (counter positive )
+                if (hist[s.charAt(j) - 'A'] > 0) {
+                    targetCount--;
+                }
+                // expand the window from end
+                hist[s.charAt(j++) - 'A']--;
+
+                // shrink the window from front
+                while (targetCount == 0) {
+                    if (minLen > j - i) {
+                        minLen = j - i;
+                        bestStart = i;
+                    }
+
+                    // to shrink the window increase counter only if it was a matching character
+                    // (counter not negative)
+                    if (hist[s.charAt(i) - 'A'] >= 0) {
+                        targetCount++;
+                    }
+                    // shrink the window from the front
+                    hist[s.charAt(i++) - 'A']++;
+                }
+            }
+
+            return ((minLen != Integer.MAX_VALUE) ? s.substring(bestStart, bestStart + minLen) : "");
+        }
+        
+        public String minLenSuperSubString2(String s, String t) {
             if (t.length() > s.length()) {
                 return "";
             }
@@ -4325,54 +4420,7 @@ public class Test {
 
             return "";
         }
-
-        public String minLenSuperSubString1(String s, String t) {
-            if (t.length() > s.length()) {
-                return "";
-            }
-            if (s.equals(t)) {
-                return s;
-            }
-
-            // keep a map for char frequency of the pattern
-            int[] hist = new int[256];
-            for (int i = 0; i < t.length(); i++) {
-                hist[t.charAt(i) - 'A']++;
-            }
-            // slide the window till we match all the chars then try to shrink
-            int i = 0, j = 0;
-            int bestStart = 0;
-            int minLen = Integer.MAX_VALUE;
-            int targetCount = t.length();
-            while (j < s.length()) {
-                // to expand the window decrease counter only if the matching char found
-                // (counter positive )
-                if (hist[s.charAt(j) - 'A'] > 0) {
-                    targetCount--;
-                }
-                // expand the window from end
-                hist[s.charAt(j++) - 'A']--;
-
-                // shrink the window from front
-                while (targetCount == 0) {
-                    if (minLen > j - i) {
-                        minLen = j - i;
-                        bestStart = i;
-                    }
-
-                    // to shrink the window increase counter only if it was a matching character
-                    // (counter not negative)
-                    if (hist[s.charAt(i) - 'A'] >= 0) {
-                        targetCount++;
-                    }
-                    // shrink the window from the front
-                    hist[s.charAt(i++) - 'A']++;
-                }
-            }
-
-            return ((minLen != Integer.MAX_VALUE) ? s.substring(bestStart, bestStart + minLen) : "");
-        }
-
+        
         // 2 ms 39 MB
         public int lengthOfLongestSubstring1(String s) {
             if (s.length() == 0) {
