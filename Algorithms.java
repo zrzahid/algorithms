@@ -5035,6 +5035,55 @@ public class Test {
                 this.head = head;
             }
         }
+        
+        public int kthSmallestInBST(TreeNode root, int k) {
+            if(root == null){
+                return -1;
+            }
+            
+            TreeNode cur = root;
+            TreeNode pre = null;
+            
+            while(cur != null){
+                // if no left subtree then visit right subtree
+                if(cur.left == null){
+                    if(--k == 0){
+                        return cur.val;
+                    }
+                    cur = cur.right;
+                }
+                else{
+                    // we have left subtree. We need to visit this subtree. The left subtree visit needs
+                    // to come back to the cur node. In order to the predecessor (max node in left subyree)
+                    // to rerach the cur node we can thread it's unused right pointer to point to cur
+                    // when traverse comes back to cur node pre.right is pointing to cur, so stop the loop
+                    pre = cur.left;
+                    while(pre.right != null && pre.right != cur){
+                        pre = pre.right;
+                    }
+                    
+                    // pre.right is null here before setting up the threaded pointer
+                    // set up the back pointer and then go visit he left subtree
+                    if(pre.right == null){
+                        pre.right = cur;
+                        cur = cur.left;
+                    }
+                    // otherwise the traverdal has came back to the root node (successor) from the 
+                    // left subtree. That means we now can visit the root and then continue to right subtree
+                    else{
+                        cur = pre.right;
+                        if(--k == 0){
+                            return cur.val;
+                        }
+                        // first unlink the thread to avoid loop
+                        pre.right = null;
+                        cur = cur.right;
+                    }
+                }
+            }
+            
+            return -1;
+        }
     }
 
     class ThreeSum {
