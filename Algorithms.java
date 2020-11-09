@@ -1937,7 +1937,7 @@ public class Test {
             
             return dummyHead.next;
         }
-
+        
         public ListNode reverseK(ListNode head, ListNode tail, ListNode reversed, int k, int count) {
             if (head == null) {
                 return reversed;
@@ -6511,6 +6511,23 @@ public class Test {
             return res.toArray(ret);
         }
 
+        /**
+         * A string S of lowercase English letters is given. We want to partition this string 
+         * into as many parts as possible so that each letter appears in at most one part, 
+         * and return a list of integers representing the size of these parts.
+
+            Example 1:
+            
+            Input: S = "ababcbacadefegdehijhklij"
+            Output: [9,7,8]
+            Explanation:
+            The partition is "ababcbaca", "defegde", "hijhklij".
+            This is a partition so that each letter appears in at most one part.
+            A partition like "ababcbacadefegde", "hijhklij" is incorrect, because it splits S into less parts.
+            
+         * @author rahzahid
+         *
+         */
         public class PartitionLabels {
             public class Interval {
                 public int start;
@@ -8073,6 +8090,16 @@ public class Test {
             return false;
         }
 
+        /**
+         *  Given a number “n”, find the least number of perfect square numbers that sum to n
+
+            For Example:
+            n=12, return 3 (4 + 4 + 4) = (2^2 + 2^2 + 2^2) NOT (3^2 + 1 + 1 + 1)
+            n = 6, return 3 (4 + 1 + 1) = (2^2 + 1^2 + 1^2)
+            
+         * @param n
+         * @return
+         */
         public int perfectSquareDP(int n) {
             if (n <= 0) {
                 return 0;
@@ -8235,6 +8262,17 @@ public class Test {
             return merged[n - 1];
         }
 
+        /**
+         *  Given a unsorted array with n elements. How can we find the largest gap 
+         *  between consecutive numbers of sorted version in O(n)? 
+
+            For example, we have a unsorted array, a=[5, 3, 1, 8, 9, 2, 4] of size n=7 then the sorted version is
+            [1, 2, 3, 4, 5, 8, 9]. The output of the algorithm should be 8-5 = 3.
+            
+            Similarly, for a=[5, 1, 8, 9, 999999, 99999] then answer should be 999999-99999 = 900000. 
+         * @param a
+         * @return
+         */
         public int maxGap(int[] a) {
             int n = a.length;
             if (n < 2) {
