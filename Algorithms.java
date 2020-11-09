@@ -4645,7 +4645,7 @@ public class Test {
                 }
                 // if mid is higher then search in left part
                 else if (nums[mid] > target) {
-                    h = mid;
+                    h = mid-1;
                 } else {
                     l = mid + 1;
                 }
@@ -4670,7 +4670,7 @@ public class Test {
                 else if (nums[mid] > target) {
                     h = mid - 1;
                 } else {
-                    l = mid;
+                    l = mid+1;
                 }
             }
 
@@ -7749,6 +7749,28 @@ public class Test {
                 System.out.println("missing numbers : "+mis1+", "+mis2);
             }
         }
+        
+        /**
+         * Given an unsorted integer array nums, find the smallest missing positive integer.
+         * 
+         * Example 1:
+            
+            Input: nums = [1,2,0]
+            Output: 3
+            
+            Example 2:
+            
+            Input: nums = [3,4,-1,1]
+            Output: 2
+            
+            Example 3:
+            
+            Input: nums = [7,8,9,11,12]
+            Output: 1
+
+         * @param nums
+         * @return
+         */
         public int firstMissingPositive(int[] nums) {
             if (nums.length == 0) {
                 return 1;
@@ -10639,6 +10661,9 @@ public class Test {
         Test t = new Test();
         Sorting st = t.new Sorting();
         st.merge(new int[] { 1, 2, 3, 0, 0, 0 }, 3, new int[] { 2, 5, 6 }, 3);
+        
+        BinarySearch bsss = t.new BinarySearch();
+        bsss.searchRange(new int[] { 5, 7, 7, 8, 8, 10 }, 8);
         
         Median m = t.new Median();
         m.kSmallestPairs(new int[] {1, 2}, new int[] {3}, 3);
