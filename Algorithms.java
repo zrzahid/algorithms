@@ -7307,6 +7307,78 @@ public class Test {
             return kClosest.toArray(new Point[k]);
         }
     }
+    
+    class PairSum {
+        Stack<TreeNode> fwd = new Stack<>();
+        Stack<TreeNode> bck = new Stack<>();
+        TreeNode fwdNode;
+        TreeNode bckNode;
+        int target;
+
+
+        public PairSum(TreeNode root, int sum){
+            fwdNode = root;
+            bckNode = root;
+            target = sum;
+        }
+
+        public List<int[]> getPairs(){
+            List<int[]> res = new ArrayList<>();
+
+            TreeNode p1 = getNext();
+            TreeNode p2 = getPrev();
+
+            while(p1 != p2){
+                if(p1.val+p2.val == target){
+                    res.add(new int[]{p1.val, p2.val});
+                    p1 = getNext();
+                    p2 = getPrev();
+                }
+                else if(p1.val+p2.val < target){
+                    p1 = getNext();
+                }
+                else{
+                    p2 = getPrev();
+                }
+            }
+
+            return res;
+        }
+
+
+        public TreeNode getNext(){
+            if(fwd.isEmpty() && fwdNode == null){
+                return null;
+            }
+
+            while(fwdNode!= null){
+                fwd.push(fwdNode);
+                fwdNode = fwdNode.left;
+            }
+
+            TreeNode returnEl = fwd.pop();
+            fwdNode = returnEl.right;
+
+            return returnEl;
+
+        }
+
+        public TreeNode getPrev(){
+            if(fwd.isEmpty() && fwdNode == null){
+                return null;
+            }
+
+            while(fwdNode!= null){
+                fwd.push(fwdNode);
+                fwdNode = fwdNode.right;
+            }
+
+            TreeNode returnEl = fwd.pop();
+            fwdNode = returnEl.left;
+
+            return returnEl;
+        }
+    }
 
     class Iterators {
         class BSTIterator {
@@ -10692,6 +10764,90 @@ public class Test {
             
             return partition(A, left, left + numMedians - 1);
         }
+        
+        
+        class Alien {
+            public boolean isAlienSorted(String[] words, String order) {
+                int[] orderPos = new int[256];
+                int i = 0;
+                for(char c : order.toCharArray()){
+                    orderPos[c-'0'] = i++;
+                }
+                
+                for(i = 1; i < words.length; i++){
+                    int l = Math.min(words[i-1].length(), words[i].length());
+                    if(!isOrrderred(words, i, orderPos)){
+                        return false;
+                    }
+                }
+                
+                return true;
+            }
+            
+            private boolean isOrrderred(String[] words, int i, int[] order){
+                int l = Math.min(words[i-1].length(), words[i].length());
+                
+                for(int j = 0; j < l; j++){
+                    if(words[i-1].charAt(j) != words[i].charAt(j)){
+                        return order[words[i-1].charAt(j)-'0'] < order[words[i].charAt(j)-'0'];
+                    }
+                }
+
+                return words[i-1].length() <= words[i].length();
+            }   
+            
+            
+            public String getAlienDictOrder(String[] words) {
+                StringBuilder order = new StringBuilder();
+                Map<Character, List<Character>> graph = new  HashMap<>();
+                
+                for(int i = 1; i < words.length; i++) {
+                    int l = Math.min(words[i-1].length(), words[i].length());
+                    
+                    for(int j = 0; j < l; j++){
+                        if(words[i-1].charAt(j) != words[i].charAt(j)){
+                            List<Character> neighbors = graph.getOrDefault(words[i-1].charAt(j), new ArrayList<>());
+                            graph.put(words[i-1].charAt(j), neighbors);
+                        }
+                    }
+                }
+                
+                for(Character c : topologicalSort(graph)) {
+                    order.append(c);
+                }
+                
+                return order.toString();
+            }
+            
+            public List<Character> topologicalSort(Map<Character, List<Character>> graph) {
+                Set<Character> visited = new HashSet<>();
+                LinkedList<Character> order = new LinkedList<>();
+
+                for (Character c : graph.keySet()) {
+                    if (!visited.contains(c)) {
+                        topologicalSortHelper(c, graph, visited, order);
+                    }
+                }
+
+               return order;
+            }
+            
+            public void topologicalSortHelper(Character u, Map<Character, List<Character>> graph,  Set<Character> visited, LinkedList<Character> order) {
+                // mark as visited
+                visited.add(u);
+
+                // first visit all the neighbors to ensure topo sort order
+                for (Character v : graph.get(u)) {
+                    if (!visited.contains(v)) {
+                        topologicalSortHelper(v, graph, visited, order);
+                    }
+                }
+
+                order.addFirst(u);
+            }
+        }
+        
+        
     }
     
     public static void main(String[] args) {
