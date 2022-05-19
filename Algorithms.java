@@ -10850,6 +10850,51 @@ public class Test {
         
     }
     
+    class MatrixDiagonalPrint {
+
+    String getId(int[] a){
+        return String.join(".", a[0]+"", a[1]+"");
+    }
+
+    public void printDiag(int[][] m) {
+        Queue<int[]> q = new LinkedList<>();
+        Set<String> seen = new HashSet<>();
+        
+        int count = 0;
+        int[] root = new int[]{0, 0};
+        q.add(root);
+        seen.add(getId(root));
+        count++;
+        
+        while(!q.isEmpty()) {
+            int[] n = q.remove();
+            System.out.print(m[n[0]][n[1]]+" ");
+            count --;
+            
+            // insert right
+            int[] right = new int[]{n[0], Math.min(n[1]+1, m[0].length-1)};
+            if(!seen.contains(getId(right))){
+                q.add(right);
+                seen.add(getId(right));
+            }
+            
+            // insert left
+            int[] left = new int[]{Math.min(n[0]+1, m.length-1), n[1]};
+            if(!seen.contains(getId(left))){
+                q.add(left);
+                seen.add(getId(left));
+            }
+            
+            if(count == 0) {
+                count = q.size();
+                System.out.println();
+            }
+            
+        }
+        
+    }
+}
+    
     public static void main(String[] args) {
 
         Test t = new Test();
