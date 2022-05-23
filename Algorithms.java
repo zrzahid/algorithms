@@ -9217,6 +9217,46 @@ public class Test {
 
             return count;
         }
+        
+        /**
+        Given an integer array a, and 2 integers - c and k, where c is the favourite number and k is the maximum number of replacements we can make. We have to find the maximum number of contiguous elements which are equal to c. We can replace k number of elements with any number we want.
+
+        Example - a = [1,2,2,3,2,2,2,4], c=2, k=2.
+
+        In this case, without any replacement, maximum number of contiguous elements will be 3 (from index 4 to index 6).
+        
+        We can replace element at index 3 with number 2 so now array will be a = [1,2,2,2,2,2,2,4] , maximum number of contiguous elements will be 6 (from index 1 to index 6).
+        For last replacement, we can replace either element at index 0 or index 7 with number 2, so maximum number of contiguous elements will be 7, which is the answer..
+
+        **/
+        public int maxConsecutiveLengthAfterPreferredReplacement(int[] a, int preferredNumber, int maxReplacement) {
+            int i = 0, j = 0, len = 0, n = a.length, maxLen = Integer.MIN_VALUE;
+            Queue<Integer> q = new LinkedList<>();
+
+            while(i < n && j < n) {
+                // slide as long as we have preferred number
+                if(a[j] == preferredNumber) {
+                    j++;
+                }
+                else{
+                    // otherewise record the mismatch and slide the window on the right
+                    q.add(j++);
+
+                    // if queue has exceeded maxReplacement then shrink by sliding from front, remove the front of queue, and record the max 
+                    if(q.size() > maxReplacement) {
+                        q.remove();
+                        maxLen = Integer.max(maxLen, j-i-1);
+                        i++;
+                    }
+                }
+            }
+            
+            if(q.size() <= maxReplacement) {
+                maxLen = Integer.max(maxLen, j-i);
+            }
+
+            return maxLen;
+        }
 
         public int maxProductSubArr(int a[]) {
             int localMax = 1;
