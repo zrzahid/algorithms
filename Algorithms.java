@@ -643,6 +643,77 @@ public class Test {
             return null;
         }
         
+    
+        private boolean isValidNeighbor(int[] cell, int[][] mat) {
+            return !(cell[0] >= mat.length || cell[0] < 0 || cell[1] >= mat[0].length || cell[1] < 0 || mat[cell[0]][cell[1]] == -1);
+        }
+        
+        /**
+        * 
+        *            Given a 2d matrix with value 0 and -1. mat[i][j] == -1 is boundary pixel. Calculate the minimum distance of each node mat[i][j] from nearest boundary pixel.
+        *            e.g:-
+        *            0 0 0 0 0 0 0 0 0
+        *            0 0 -1 -1 0 0 0 0
+        *            0 -1 0 0 -1 -1 0 0
+        *            0 0 -1 0 0 0 -1 0 0
+        *            0 -1 0 0 0 -1 0 0 0
+        *            0 0 -1 -1 -1 0 0 0 0
+        *            0 0 0 0 0 0 0 0 0
+        *
+        *            Distance is calculated as |x1-x2| + |y1-y2|
+        *            mat[i][j] =
+        *            0 0 0
+        *            0 -1 0
+        *            0 0 0
+        *            Output:
+        *            2 1 2
+        *            1 0 1
+        *            2 1 2
+        *
+        **/
+
+        public int[][] minBoundaryDist(int[][] mat) {
+            int n = mat.length;
+            int m = mat[0].length;
+            int[][] shortestDist = new int[n][m];
+            for(int[] row : shortestDist) {
+                Arrays.fill(row, Integer.MAX_VALUE);
+            }
+            Queue<int[]> q = new LinkedList<>();
+            boolean[][] visited = new boolean[n][m];
+
+            // insert all the boundary cells
+            for(int i = 0; i < n; i++) {
+                for (int j = 0; j < m; j++) {
+                    if(mat[i][j] == -1) {
+                        q.add(new int[]{i, j});
+                        shortestDist[i][j] = 0; // no distance to cover if this is a boundary cell itself
+                        visited[i][j] = true;
+                    }
+                }
+            }
+
+            // do BFS trversal for computing shortest distance of each node
+            while(!q.isEmpty()) {
+                int[] cell = q.remove();
+
+                // visit neighbors in 1 distance away 
+                int[][] dirs = new int[][] {{0, -1}, {0, 1}, {1, 0}, {-1, 0}};
+                for(int[] dir : dirs) {
+                    int[] next = new int[] {cell[0] + dir [0], cell[1] + dir [1]};
+
+                    if(isValidNeighbor(next, mat) && !visited[next[0]][next[1]]) {
+                        shortestDist[next[0]][next[1]] = Math.min(shortestDist[next[0]][next[1]], 1 + shortestDist[cell[0]][cell[1]]);
+                        q.add(next);
+                        visited[next[0]][next[1]] = true;
+                    }
+
+                }
+            }
+
+            return shortestDist;
+        }
+        
         public void inorderMorris(TreeNode root) {
 
             TreeNode cur = root;
