@@ -10319,16 +10319,16 @@ public class Test {
 
             int maxArea = 0;
             int n = hist.length;
-            // for a given bar the max area is incorporated by the area
-            // between the lfirst higher bar on the left and first higher bar
-            // on the right
+            // for a given bar the max area with this bar as the height is incorporated by the area
+            // between the first lower bar (exclusive) on the left and first lower bar
+            // on the right (exclusive)
 
             int[] left = new int[n];
             int[] right = new int[n];
             left[0] = -1;
             right[n - 1] = n;
 
-            // find first higher bar on the left
+            // find first lower bar (exclusive) on the left
             for (int i = 1; i < n; i++) {
                 int j = i - 1;
                 while (j >= 0 && hist[j] >= hist[i]) {
@@ -10342,7 +10342,7 @@ public class Test {
                 left[i] = j;
             }
 
-            // find first higher bar on the right
+            // find first lower bar (exclusive) on the right
             for (int i = n - 2; i >= 0; i--) {
                 int j = i + 1;
                 while (j < n && hist[j] >= hist[i]) {
