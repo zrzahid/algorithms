@@ -6846,6 +6846,64 @@ public class Test {
             return mergedStrips;
         }
     }
+    
+    public static class GroupPerformance {
+        
+        /**
+        You are given two integers n and k and two integer arrays speed and efficiency both of length n. There are n engineers numbered from 1 to n. speed[i] and efficiency[i] represent the speed and efficiency of the ith engineer respectively.
+        
+        Choose at most k different engineers out of the n engineers to form a team with the maximum performance.
+        
+        The performance of a team is the sum of their engineers' speeds multiplied by the minimum efficiency among their engineers.
+        Return the maximum performance of this team. Since the answer can be a huge number, return it modulo 109 + 7.
+        
+        Input: n = 6, speed = [2,10,3,1,5,8], efficiency = [5,4,3,9,7,2], k = 2
+        Output: 60
+        Explanation: 
+        We have the maximum performance of the team by selecting engineer 2 (with speed=10 and efficiency=4) and engineer 5 (with speed=5 and efficiency=7). That is, performance = (10 + 5) * min(4, 7) = 60.
+        **/
+        
+        public int maxPerformance(int n, int[] speed, int[] efficiency, int k) {
+            // max peformance of a group can be achieved by the total speed team can operate with
+            // a maximum group efficiency. Groups efficiency is negatively impacted by most in efficient 
+            // engineer. So,in order to maximize the performance of the team our goal would be to
+            // select the most efficient k engineers first and then try to maximize performance by adding         // next most efficient engineers after removing the slowest engineer from the current group.
+
+            int teamPerformance = Integer.MIN_VALUE;
+            int[][] engineers = new int[n][2];
+            for(int i = 0; i < n; i++) {
+                engineers[i][0] = efficiency[i];
+                engineers[i][1] = speed[i];
+            }
+
+            // now sort the engineers based on efficiency - we always pick up the next most efficient 
+            // engineer to maximize team's perforamnce
+            // So, the sort order is descending of the efficiency 
+            Arrays.sort(engineers, (a, b) -> b[0] - a[0]);
+
+            // now keep a pool of k engineers with fasted engineers such that we maximize 
+            // total_team_perforamnce = (total_team_speed)*efficiency_of_most_inefficient_engineer.
+            // for the top k pool we use a min heap to weed out the slowest one 
+            PriorityQueue<Integer> pq = new PriorityQueue<>(k, (a, b) -> a - b);
+            int totalTeamSpeed = 0;
+            for(int i = 0; i < n; i++) {
+                pq.add(engineers[i][1]);
+                totalTeamSpeed += engineers[i][1];
+
+                // if queue already have q then remove the slowest engineer and add the next most 
+                // efficient one
+                if(pq.size() > k) {
+                    totalTeamSpeed -= pq.remove();
+                }
+
+                // compute team performance
+                // min efficiency is the efficiency of new engineer as we go in the order of efficiency
+                teamPerformance = Math.max(teamPerformance, totalTeamSpeed*engineers[i][0]);
+            }
+
+            return (int) (teamPerformance % (long)(1e9 + 7));
+        }
+    }
 
     public static class BlockingQueue implements Serializable {
 
