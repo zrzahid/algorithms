@@ -6903,6 +6903,58 @@ public class Test {
 
             return (int) (teamPerformance % (long)(1e9 + 7));
         }
+        
+        
+        /**
+        There are n workers. You are given two integer arrays quality and wage where quality[i] is the quality of the ith worker and wage[i] is the minimum wage expectation for the ith worker.
+
+        We want to hire exactly k workers to form a paid group. To hire a group of k workers, we must pay them according to the following rules:
+
+        Every worker in the paid group should be paid in the ratio of their quality compared to other workers in the paid group.
+        Every worker in the paid group must be paid at least their minimum wage expectation.
+
+        Example 1:
+
+        Input: quality = [10,20,5], wage = [70,50,30], k = 2
+        Output: 105.00000
+        Explanation: We pay 70 to 0th worker and 35 to 2nd worker.
+
+        Example 2:
+
+        Input: quality = [3,1,10,10,1], wage = [4,8,2,2,7], k = 3
+        Output: 30.66667
+        Explanation: We pay 4 to 0th worker, 13.33333 to 2nd and 3rd workers separately.
+        **/
+        
+        public double mincostToHireWorkers(int[] quality, int[] wage, int k) {    
+            int n = quality.length;
+            double minCost = (double)Integer.MAX_VALUE;
+            double[][] workers = new double[n][2];
+            for(int i = 0; i < n; i++) {
+                workers[i][0] = wage[i]/(double)quality[i];
+                workers[i][1] = (double) quality[i];
+            }
+
+            Arrays.sort(workers, (a, b) -> Double.compare(a[0], b[0]));
+            PriorityQueue<Double> pq = new PriorityQueue<>(k, (a, b) -> Double.compare(b, a));
+            int totalQuality = 0;
+            for(int i = 0; i < n; i++) {
+                pq.add(workers[i][1]);
+                totalQuality += workers[i][1];
+
+                // if queue already have q then remove the top quality worker and add the next most 
+                // cost effective one (with lower paid ratio)
+                if(pq.size() > k) {
+                    totalQuality -= pq.remove();
+                }
+
+                // compute the cost
+                if(pq.size() == k)
+                    minCost = Math.min(minCost, totalQuality*workers[i][0]);
+            }
+
+            return minCost;
+        }
     }
 
     public static class BlockingQueue implements Serializable {
