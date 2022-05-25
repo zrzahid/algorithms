@@ -6955,6 +6955,53 @@ public class Test {
 
             return minCost;
         }
+        
+    class HuffmanTreeNode {
+        char c;
+        int freq;
+        HuffmanTreeNode left;
+        HuffmanTreeNode right;
+        
+        public HuffmanTreeNode(char c, int freq) {
+            this.c = c;
+            this.freq = freq;
+        }
+    }
+    
+    public HuffmanTreeNode constructHuffmanTree(TreeMap<Character, Integer> charFreq) {
+        PriorityQueue<HuffmanTreeNode> pq = new PriorityQueue<>(new Comparator<HuffmanTreeNode>() {
+            
+            public int compare(HuffmanTreeNode a, HuffmanTreeNode b) {
+                if(a.freq == b.freq) {
+                    return Character.toString(b.c).compareTo(Character.toString(a.c));
+                }
+                return Integer.compare(a.freq, b.freq);
+            }
+            
+        });
+        
+        // create leaves int the order of frequency
+        for(Character c : charFreq.keySet()) {
+            pq.add(new HuffmanTreeNode(c, charFreq.get(c)));
+        }
+        
+        HuffmanTreeNode root = null;
+        
+        while(pq.size() > 1) {
+            HuffmanTreeNode left = pq.poll();
+            HuffmanTreeNode right = pq.poll(); // assumng at least 2 characters 
+            
+            HuffmanTreeNode node = new HuffmanTreeNode('#', left.freq+right.freq);
+            node.left = left;
+            node.right = right;
+            
+            root = node;
+            pq.add(node);
+        }
+        
+        return root;
+     }
+        
     }
 
     public static class BlockingQueue implements Serializable {
