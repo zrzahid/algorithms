@@ -11163,6 +11163,101 @@ public class Test {
     }
 }
     
+    class FibonnaciIds {
+        public String createChildId(String[] parentIds) {
+            if(parentIds == null || (parentIds.length != 2 || parentIds[0].length() != parentIds[0].length())) {
+                return null;
+            }
+
+            StringBuilder sb = new StringBuilder();
+            // initialize the series
+            sb.append(parentIds[0].charAt(0));
+            sb.append(parentIds[1].charAt(0));
+            int count1 = 1;
+            int count2 = 1;
+
+            int turn = 0;
+            int[] index = new int[]{1, 1};
+            // merge two string in a fibonnacy series
+            while(index[0] < parentIds[0].length() && index[1] < parentIds[1].length()) {
+                int startIndex = index[turn%2];
+                int endIndex = Math.min(index[turn%2]+count1+count2, parentIds[turn%2].length());
+
+                System.out.println("before --> turn "+turn%2+" (start, end) {"+ startIndex+","+endIndex+"}" + " count {"+count1+", "+count2+"}" + " sb: "+sb.toString()+ " index[] {"+index[0]+", "+index[1]+"}");
+
+                sb.append(parentIds[turn%2].substring(startIndex, endIndex));
+                index[turn%2] = endIndex;
+                count1 ^= count2;
+                count2 ^= count1;
+                count1 ^= count2;
+                count2 += count1;
+                turn ++;
+                System.out.println("after --> turn "+turn%2+ " count {"+count1+", "+count2+"}" + " sb: "+sb.toString()+ " index[] {"+index[0]+", "+index[1]+"}");
+                System.out.println("-----");
+            }
+
+            // append remaining
+            if(index[0] < parentIds[0].length()){
+                sb.append(parentIds[0].substring(index[0]));
+            }
+
+            // append remaining
+            if(index[1] < parentIds[1].length()){
+                sb.append(parentIds[1].substring(index[1]));
+            }
+
+            return sb.toString();
+        }
+
+        public String[] getParentIds(String childId) {
+            if(childId == null || childId.length()%2 != 0) {
+                return null;
+            }
+
+            StringBuilder[] parentIds = new StringBuilder[2];
+            parentIds[0] = new StringBuilder();
+            parentIds[1] = new StringBuilder();
+
+            int i = 0;
+            parentIds[0].append(childId.charAt(i++));
+            parentIds[1].append(childId.charAt(i++));
+
+            int turn = 0;
+            int count1 = 1;
+            int count2 = 1;
+            while(i < childId.length()) {
+                int maxLen = (childId.length()/2)-parentIds[turn%2].length();
+                int endIndex = i+Math.min(count1+count2, maxLen);
+
+                System.out.println("before --> turn "+turn%2+" (start, end) {"+ i+","+endIndex+"}" + " count {"+count1+", "+count2+"}" + " parentIds[] {"+parentIds[0].toString()+", "+parentIds[1].toString()+"}");
+
+                parentIds[turn%2].append(childId.substring(i, endIndex));
+                i = endIndex;
+                count1 ^= count2;
+                count2 ^= count1;
+                count1 ^= count2;
+                count2 += count1;
+                turn ++;
+
+                System.out.println("after --> turn "+turn%2 + " count {"+count1+", "+count2+"}" + " parentIds[] {"+parentIds[0].toString()+", "+parentIds[1].toString()+"}");
+                System.out.println("-----");
+            }
+
+            // append remaining
+            if(i < childId.length() ){
+                if(parentIds[0].length() < parentIds[1].length()){
+                    parentIds[0].append(childId.substring(i));
+                }
+                else{
+                    parentIds[1].append(childId.substring(i));
+                }
+            }
+
+            return new String[] {parentIds[0].toString(), parentIds[1].toString()};
+        }
+
+    }
+    
     public static void main(String[] args) {
 
         Test t = new Test();
